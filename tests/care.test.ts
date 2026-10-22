@@ -17,7 +17,7 @@ import { challengesForDay } from "../config/challenges";
 describe("care", () => {
   it("keeps evolution costs increasing", () => {
     expect(EVOLUTION_COSTS[2].duplicates).toBeLessThan(EVOLUTION_COSTS[3].duplicates);
-    expect(EVOLUTION_COSTS[2].tokens).toBeLessThan(EVOLUTION_COSTS[3].tokens);
+    expect(EVOLUTION_COSTS[2].hops).toBe(EVOLUTION_COSTS[3].hops);
     expect(NOTE_PERMANENT_COST).toBe(0);
   });
 

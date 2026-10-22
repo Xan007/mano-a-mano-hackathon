@@ -13,6 +13,7 @@ import { PlushArt } from "./PlushArt";
 import { PlusBadge } from "./PlusBadge";
 import { SoundToggle } from "./SoundToggle";
 import { play } from "../lib/audio";
+import { EVOLUTION_COSTS } from "../../config/care";
 
 const links = [
   { to: "/casa", label: "Casa", Icon: Home },
@@ -63,6 +64,7 @@ export function Nav({
     (item) => item.createdAt > seen.collection,
   );
   const lastArrival = useRef<{ token: string; ids: Set<string> } | null>(null);
+  const lastCollection = useRef<{ token: string; ids: Set<string> } | null>(null);
 
   useEffect(() => {
     if (!token || arrivals === undefined) return;
@@ -88,6 +90,29 @@ export function Nav({
     }
     lastArrival.current = { token, ids: currentIds };
   }, [arrivals, navigate, token]);
+
+  useEffect(() => {
+    if (!token || plushes === undefined) return;
+    const ids = new Set(plushes.map((item) => item._id));
+    const previous = lastCollection.current;
+    if (previous?.token === token) {
+      plushes.filter((item) => !previous.ids.has(item._id)).forEach((item) => {
+        const sameSpecies = plushes.filter((candidate) => candidate.catalogId === item.catalogId);
+        const duplicateCount = Math.max(0, sameSpecies.length - 1);
+        if (duplicateCount === 0) return;
+        const stage = Math.max(...sameSpecies.map((candidate) => candidate.evolution ?? 1));
+        if (stage >= 3) return;
+        const required = EVOLUTION_COSTS[Math.min(3, stage + 1) as 2 | 3].duplicates;
+        const missing = Math.max(0, required - duplicateCount);
+        if (missing === 0) {
+          toast.success(`${item.catalog?.species ?? "Tu peluche"} ya puede evolucionar`, { description: "Abre su perfil para evolucionarlo.", action: { label: "Ver perfil", onClick: () => navigate(`/peluche/${sameSpecies[0]._id}`) }, id: `evolution-ready-${item.catalogId}` });
+        } else {
+          toast.info(`${item.catalog?.species ?? "Peluche"} repetido`, { description: `Te ${missing === 1 ? "falta 1 repetido" : `faltan ${missing} repetidos`} para evolucionarlo.`, id: `evolution-progress-${item._id}` });
+        }
+      });
+    }
+    lastCollection.current = { token, ids };
+  }, [plushes, navigate, token]);
 
   const mailboxNew = unseenMailbox.length;
   const hasNewPlush = newPlushes.length;

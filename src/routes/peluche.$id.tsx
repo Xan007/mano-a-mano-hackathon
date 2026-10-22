@@ -1,11 +1,11 @@
-import { Modal } from "../components/Modal";
+﻿import { Modal } from "../components/Modal";
 import { AnimatePresence } from "motion/react";
 import { useCalmMotion as useReducedMotion } from "../lib/motion";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { useMutation, useQuery } from "convex/react";
 import { m as motion } from "motion/react";
-import { ArrowLeft, Bookmark, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Bookmark, Send, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -14,6 +14,7 @@ import { errorMessage } from "../lib/errors";
 import { PlushArt } from "../components/PlushArt";
 import { HopTrack } from "../components/HopTrack";
 import { NoteCard, NoteGrid } from "../components/NoteCard";
+import { EVOLUTION_COSTS, EVOLUTION_STAGES } from "../../config/care";
 
 export default function PelucheDetail() {
   const token = useToken();
@@ -25,16 +26,17 @@ export default function PelucheDetail() {
   const remove = useMutation(api.notes.remove);
   const report = useMutation(api.notes.report);
   const voteNote = useMutation(api.notes.toggleLike);
+  const evolve = useMutation(api.plush.evolve);
   const [deleting, setDeleting] = useState<Id<"notes"> | null>(null);
   const [busy, setBusy] = useState(false);
   const reduce = useReducedMotion();
-  if (item === undefined) return <p role="status">Buscando el peluche…</p>;
+  if (item === undefined) return <p role="status">Buscando el pelucheâ€¦</p>;
   if (!item)
     return (
       <div className="card space-y-4 p-6">
         <h1 className="text-2xl">No encontramos ese peluche</h1>
         <Link to="/coleccion" className="btn btn-ghost">
-          Volver a la colección
+          Volver a la colecciÃ³n
         </Link>
       </div>
     );
@@ -64,7 +66,16 @@ export default function PelucheDetail() {
 
   async function handleVote(noteId: Id<"notes">, vote: "up" | "down") {
     try { await voteNote({ token, noteId, vote }); }
-    catch (error) { toast.error(errorMessage(error, "No pudimos actualizar la reputación")); }
+    catch (error) { toast.error(errorMessage(error, "No pudimos actualizar la reputaciÃ³n")); }
+  }
+
+  async function handleEvolve() {
+    try {
+      const result = await evolve({ token, plushId });
+      toast.success(`${item?.catalog?.species ?? "Tu peluche"} evolucionÃ³`, { description: `Ahora es ${EVOLUTION_STAGES[result.evolution as 1 | 2 | 3].name}.` });
+    } catch (error) {
+      toast.error(errorMessage(error, "No pudimos evolucionar el peluche"));
+    }
   }
 
   return (
@@ -74,7 +85,7 @@ export default function PelucheDetail() {
         className="inline-flex min-h-11 items-center gap-2 text-sm font-bold"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        Tu colección
+        Tu colecciÃ³n
       </Link>
       <section className="card flex items-center gap-5 overflow-hidden bg-mango p-5 sm:p-7">
         <motion.div
@@ -97,27 +108,27 @@ export default function PelucheDetail() {
           <p className="label">
             {item.status === "traveling"
               ? item.waitingSince !== undefined
-                ? "Buscando a quién llegar"
+                ? "Buscando a quiÃ©n llegar"
                 : "De mano en mano"
               : item.status === "returned"
-                ? "Volvió con su libreta"
+                ? "VolviÃ³ con su libreta"
                 : "Listo para viajar"}
           </p>
           <h1 className="mt-2 text-3xl sm:text-4xl">
             {item.catalog?.species ?? "Tu peluche"}
           </h1>
           <p className="mt-2 text-sm leading-relaxed">
-            Un pequeño lugar para guardar palabras amables.
+            Un pequeÃ±o lugar para guardar palabras amables.
           </p>
           {item.status === "traveling" && (
             <div className="mt-3 space-y-2">
               {item.waitingSince !== undefined ? (
                 <p className="text-sm leading-relaxed text-ink/75">
-                  Aún no hay otra persona disponible. Lo intentaremos de nuevo y, si nadie puede recibirlo en 48 horas, volverá a tu colección con tu nota.
+                  AÃºn no hay otra persona disponible. Lo intentaremos de nuevo y, si nadie puede recibirlo en 48 horas, volverÃ¡ a tu colecciÃ³n con tu nota.
                 </p>
               ) : (
                 <>
-                  <p className="text-xs font-bold">Parada {item.currentHop ?? item.hopCount} de {item.hopsTarget} · {item.holderIsNpc === true ? "con un personaje" : item.holderIsNpc === false ? "con otra persona" : "en tránsito"}</p>
+                  <p className="text-xs font-bold">Parada {item.currentHop ?? item.hopCount} de {item.hopsTarget} Â· {item.holderIsNpc === true ? "con un personaje" : item.holderIsNpc === false ? "con otra persona" : "en trÃ¡nsito"}</p>
                   <HopTrack hops={item.currentHop ?? item.hopCount} total={item.hopsTarget} />
                 </>
               )}
@@ -126,21 +137,30 @@ export default function PelucheDetail() {
         </div>
       </section>
       {item.status === "collection" && (
-        <Link to={`/enviar?id=${item._id}`} className="btn btn-guava w-full">
-          <Send className="h-4 w-4" aria-hidden="true" />
-          Enviar de viaje
-        </Link>
+        <div className="space-y-3">
+          <Link to={`/enviar?id=${item._id}`} className="btn btn-guava w-full">
+            <Send className="h-4 w-4" aria-hidden="true" />
+            Enviar de viaje
+          </Link>
+          {(item.evolution ?? 1) < 3 && <section className="rounded-2xl border-2 border-ink bg-mist p-4 shadow-[3px_3px_0_var(--color-ink)]">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-ink bg-paper"><Sparkles className="h-5 w-5 text-lagoon" aria-hidden="true" /></span>
+              <div className="min-w-0 flex-1"><h2 className="font-display text-lg">EvoluciÃ³n {EVOLUTION_STAGES[((item.evolution ?? 1) + 1) as 2 | 3].name}</h2><p className="mt-1 text-sm text-ink/70">ReÃºne los repetidos necesarios de esta especie para mejorar su tarjeta.</p><p className="mt-1 text-xs font-bold">{Math.min(item.duplicateCount, EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates)} / {EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates} repetidos</p></div>
+            </div>
+            <button type="button" onClick={() => void handleEvolve()} disabled={item.duplicateCount < EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates || busy} className="btn btn-ink mt-3 w-full disabled:cursor-not-allowed disabled:opacity-45">{item.duplicateCount >= EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates ? "Evolucionar ahora" : `Faltan ${EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates - item.duplicateCount}`}</button>
+          </section>}
+        </div>
       )}
         <section className="card space-y-4 p-5">
           <div>
             <h2 className="text-2xl">Su libreta</h2>
           </div>
-          {notes === undefined && <p role="status">Abriendo la libreta…</p>}
+          {notes === undefined && <p role="status">Abriendo la libretaâ€¦</p>}
           {notes?.length === 0 && (
             <p className="text-sm text-ink/70">
               {item.status === "traveling"
-                ? "Está reuniendo notas. Podrás leerlas cuando vuelva."
-                : "Todavía no hay notas. Su primer viaje empieza con una frase tuya."}
+                ? "EstÃ¡ reuniendo notas. PodrÃ¡s leerlas cuando vuelva."
+                : "TodavÃ­a no hay notas. Su primer viaje empieza con una frase tuya."}
             </p>
           )}
           <NoteGrid>
@@ -150,7 +170,7 @@ export default function PelucheDetail() {
                   key={entry._id}
                   compact
                   body={entry.body}
-                  alias={`${entry.author.alias ?? "Alguien"}${entry.author.isNpc ? " · Demo" : ""}`}
+                  alias={`${entry.author.alias ?? "Alguien"}${entry.author.isNpc ? " Â· Demo" : ""}`}
                   coverId={entry.cover}
                   effectId={entry.effect}
                   themeId={entry.theme}
@@ -199,10 +219,10 @@ export default function PelucheDetail() {
             className="w-full max-w-sm rounded-3xl border-2 border-ink bg-paper p-5 text-ink shadow-[6px_6px_0_var(--color-ink)]"
           >
             <h2 id="delete-note-title" className="text-2xl">
-              ¿Borrar esta nota?
+              Â¿Borrar esta nota?
             </h2>
             <p className="mt-2 text-sm text-ink/70">
-              Se quitará de tu libreta.
+              Se quitarÃ¡ de tu libreta.
             </p>
             <div className="mt-5 flex gap-3">
               <button
@@ -230,3 +250,6 @@ export default function PelucheDetail() {
     </div>
   );
 }
+
+
+

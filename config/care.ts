@@ -10,9 +10,9 @@ export const EVOLUTION_STAGES: Record<EvolutionStage, { name: string; blurb: str
   3: { name: "Leyenda", blurb: "Su libreta es parte del Llano." },
 };
 
-export const EVOLUTION_COSTS: Record<2 | 3, { duplicates: number; tokens: number; hops: number }> = {
-  2: { duplicates: 2, tokens: 20, hops: 1 },
-  3: { duplicates: 4, tokens: 50, hops: 1 },
+export const EVOLUTION_COSTS: Record<2 | 3, { duplicates: number; hops: number }> = {
+  2: { duplicates: 3, hops: 1 },
+  3: { duplicates: 4, hops: 1 },
 };
 
 export type PotionKind = "shiny" | "secret";

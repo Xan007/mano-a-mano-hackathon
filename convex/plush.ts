@@ -417,23 +417,16 @@ export const evolve = mutation({
         `Necesitas ${cost.duplicates} repetidos de esta especie para evolucionar`,
       );
     }
-    if (me.tokens < cost.tokens) {
-      throw new ConvexError(`Necesitas ${cost.tokens} fichas para evolucionar`);
-    }
-
     for (const duplicate of duplicates.slice(0, cost.duplicates)) {
       await ctx.db.delete(duplicate._id);
     }
 
-    const tokens = me.tokens - cost.tokens;
     const hopsTarget = item.hopsTarget + cost.hops;
     await ctx.db.patch(plushId, { evolution: next, hopsTarget });
-    await ctx.db.patch(me._id, { tokens });
 
     return {
       evolution: next,
       hopsTarget,
-      tokens,
       consumed: cost.duplicates,
     };
   },

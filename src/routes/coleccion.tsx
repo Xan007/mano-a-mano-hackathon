@@ -28,6 +28,7 @@ function DisplayPlush({ item, isNew }: { item: Plush; isNew: boolean }) {
   const returned = item.status === "returned";
   const notes = item.receivedNoteCount ?? 0;
   const rarity = item.catalog?.rarity ?? "comun";
+  const stage = item.evolution ?? 1;
   const stops = item.waitingSince !== undefined
     ? item.hopCount
     : item.currentHop ?? item.hopCount;
@@ -35,7 +36,7 @@ function DisplayPlush({ item, isNew }: { item: Plush; isNew: boolean }) {
   const StatusIcon = traveling ? Send : returned ? Mail : House;
   return (
     <Link to={`/peluche/${item._id}`} className="group block h-full rounded-[1.1rem] focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-lagoon" aria-label={`${item.catalog?.species ?? "Peluche"}, ${traveling ? "de viaje" : returned ? `regresó con ${notes} notas recibidas` : "en casa"}`}>
-      <motion.article whileHover={reduce ? undefined : { y: -5 }} transition={{ type: "spring", stiffness: 330, damping: 25 }} className="flex h-full flex-col overflow-hidden rounded-[1.1rem] border-[3px] border-ink bg-paper shadow-[4px_4px_0_var(--color-ink)]">
+      <motion.article whileHover={reduce ? undefined : { y: -5 }} transition={{ type: "spring", stiffness: 330, damping: 25 }} className={cn("flex h-full flex-col overflow-hidden rounded-[1.1rem] border-[3px] border-ink bg-paper shadow-[4px_4px_0_var(--color-ink)]", stage === 2 && "border-lagoon shadow-[4px_4px_0_var(--color-lagoon)]", stage >= 3 && "border-plum bg-[#fff8ff] shadow-[4px_4px_0_var(--color-plum)]")}>
         <div className={cn("relative overflow-hidden border-b-2 border-ink p-2 pb-9 sm:p-3 sm:pb-10", traveling ? "bg-mist" : returned ? "bg-blush" : "bg-sand")}>
           <div className="relative overflow-hidden rounded-lg border-2 border-ink bg-paper">
             <img src={item.catalog?.imagePath} alt="" loading="lazy" width="320" height="320" className="aspect-square w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-[1.045]" />
@@ -55,7 +56,7 @@ function DisplayPlush({ item, isNew }: { item: Plush; isNew: boolean }) {
           <div className="flex flex-wrap gap-1">
             <span className={cn("chip", rarityChip[rarity], rarityText[rarity])}>{RARITY_LABELS[rarity]}</span>
             {item.variant && <span className="text-[10px] font-bold text-plum">{item.variant === "secret" ? "Secreto" : "Brillante"}</span>}
-            {(item.evolution ?? 1) > 1 && <span className="text-[10px] font-bold text-ink/65">Nivel {item.evolution}</span>}
+            {stage > 1 && <span className={cn("text-[10px] font-bold", stage >= 3 ? "text-plum" : "text-lagoon")}>Nivel {stage}</span>}
           </div>
           {traveling ? (
             <div className="mt-auto space-y-1 pt-1">
