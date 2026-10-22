@@ -122,10 +122,11 @@ function Shell({
 }
 
 function PlayerGate({ token }: { token: string }) {
+  const MOOD_INTERVAL = 12 * 60 * 60 * 1000;
   const { clear, sessionStartedAt } = useSession();
   const location = useLocation();
   const [moodOpen, setMoodOpen] = useState(false);
-  const [seenSession, setSeenSession] = useState<number | null>(null);
+  const [handledSession, setHandledSession] = useState<number | null>(null);
   const me = useQuery(api.auth.me, { token });
   const touch = useMutation(api.players.touch);
 
@@ -134,11 +135,16 @@ function PlayerGate({ token }: { token: string }) {
   }, [me, clear]);
 
   useEffect(() => {
-    if (sessionStartedAt && sessionStartedAt !== seenSession) {
-      setSeenSession(sessionStartedAt);
+    if (!sessionStartedAt || !me || me.companion === "" || !me.firstJourneyAt || location.pathname !== "/casa") return;
+    if (handledSession === sessionStartedAt) return;
+    setHandledSession(sessionStartedAt);
+    const key = `manoamano.mood-checkin.${token}`;
+    const lastShown = Number(localStorage.getItem(key) ?? 0);
+    if (Date.now() - lastShown >= MOOD_INTERVAL) {
+      localStorage.setItem(key, String(Date.now()));
       setMoodOpen(true);
     }
-  }, [sessionStartedAt, seenSession]);
+  }, [me, location.pathname, sessionStartedAt, handledSession, token]);
 
   useEffect(() => {
     const ping = () => { if (document.visibilityState === "visible") touch({ token }).catch(() => undefined); };
@@ -152,9 +158,9 @@ function PlayerGate({ token }: { token: string }) {
   if (me.bannedAt) return <div className="mx-auto max-w-md space-y-4 p-6"><Brand/><h1 className="text-3xl">Cuenta suspendida</h1><p className="text-sm">El equipo de moderación suspendió esta cuenta.</p>{me.banReason&&<p className="rounded-xl bg-sand p-3 text-sm">{me.banReason}</p>}<button type="button" className="btn btn-ghost" onClick={clear}>Salir de mi cuenta</button></div>;
   if (location.pathname === "/admin") return <Suspense fallback={<Splash message="Abriendo administración…"/>}><Admin/></Suspense>;
   const checkIn = moodOpen ? <MoodCheckIn onClose={() => setMoodOpen(false)} /> : null;
-  if (location.pathname === "/apoyo" && !me.firstJourneyAt) return <>{checkIn}<Apoyo standalone /></>;
-  if (me.companion === "") return <>{checkIn}<Onboarding /></>;
-  if (!me.firstJourneyAt) return <>{checkIn}<FirstJourney /></>;
+  if (location.pathname === "/apoyo" && !me.firstJourneyAt) return <Apoyo standalone />;
+  if (me.companion === "") return <Onboarding />;
+  if (!me.firstJourneyAt) return <FirstJourney />;
   return <>{checkIn}<Shell me={me} /></>;
 }
 
