@@ -1,4 +1,4 @@
-﻿import { Modal } from "../components/Modal";
+import { Modal } from "../components/Modal";
 import { AnimatePresence } from "motion/react";
 import { useCalmMotion as useReducedMotion } from "../lib/motion";
 import { useState } from "react";
@@ -30,13 +30,13 @@ export default function PelucheDetail() {
   const [deleting, setDeleting] = useState<Id<"notes"> | null>(null);
   const [busy, setBusy] = useState(false);
   const reduce = useReducedMotion();
-  if (item === undefined) return <p role="status">Buscando el pelucheâ€¦</p>;
+  if (item === undefined) return <p role="status">Buscando el peluche…</p>;
   if (!item)
     return (
       <div className="card space-y-4 p-6">
         <h1 className="text-2xl">No encontramos ese peluche</h1>
         <Link to="/coleccion" className="btn btn-ghost">
-          Volver a la colecciÃ³n
+          Volver a la colección
         </Link>
       </div>
     );
@@ -66,13 +66,13 @@ export default function PelucheDetail() {
 
   async function handleVote(noteId: Id<"notes">, vote: "up" | "down") {
     try { await voteNote({ token, noteId, vote }); }
-    catch (error) { toast.error(errorMessage(error, "No pudimos actualizar la reputaciÃ³n")); }
+    catch (error) { toast.error(errorMessage(error, "No pudimos actualizar la reputación")); }
   }
 
   async function handleEvolve() {
     try {
       const result = await evolve({ token, plushId });
-      toast.success(`${item?.catalog?.species ?? "Tu peluche"} evolucionÃ³`, { description: `Ahora es ${EVOLUTION_STAGES[result.evolution as 1 | 2 | 3].name}.` });
+      toast.success(`${item?.catalog?.species ?? "Tu peluche"} evolucionó`, { description: `Ahora es ${EVOLUTION_STAGES[result.evolution as 1 | 2 | 3].name}.` });
     } catch (error) {
       toast.error(errorMessage(error, "No pudimos evolucionar el peluche"));
     }
@@ -85,7 +85,7 @@ export default function PelucheDetail() {
         className="inline-flex min-h-11 items-center gap-2 text-sm font-bold"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        Tu colecciÃ³n
+        Tu colección
       </Link>
       <section className="card flex items-center gap-5 overflow-hidden bg-mango p-5 sm:p-7">
         <motion.div
@@ -108,27 +108,27 @@ export default function PelucheDetail() {
           <p className="label">
             {item.status === "traveling"
               ? item.waitingSince !== undefined
-                ? "Buscando a quiÃ©n llegar"
+                ? "Buscando a quién llegar"
                 : "De mano en mano"
               : item.status === "returned"
-                ? "VolviÃ³ con su libreta"
+                ? "Volvió con su libreta"
                 : "Listo para viajar"}
           </p>
           <h1 className="mt-2 text-3xl sm:text-4xl">
             {item.catalog?.species ?? "Tu peluche"}
           </h1>
           <p className="mt-2 text-sm leading-relaxed">
-            Un pequeÃ±o lugar para guardar palabras amables.
+            Un pequeño lugar para guardar palabras amables.
           </p>
           {item.status === "traveling" && (
             <div className="mt-3 space-y-2">
               {item.waitingSince !== undefined ? (
                 <p className="text-sm leading-relaxed text-ink/75">
-                  AÃºn no hay otra persona disponible. Lo intentaremos de nuevo y, si nadie puede recibirlo en 48 horas, volverÃ¡ a tu colecciÃ³n con tu nota.
+                  Aún no hay otra persona disponible. Lo intentaremos de nuevo y, si nadie puede recibirlo en 48 horas, volverá a tu colección con tu nota.
                 </p>
               ) : (
                 <>
-                  <p className="text-xs font-bold">Parada {item.currentHop ?? item.hopCount} de {item.hopsTarget} Â· {item.holderIsNpc === true ? "con un personaje" : item.holderIsNpc === false ? "con otra persona" : "en trÃ¡nsito"}</p>
+                  <p className="text-xs font-bold">Parada {item.currentHop ?? item.hopCount} de {item.hopsTarget} · {item.holderIsNpc === true ? "con un personaje" : item.holderIsNpc === false ? "con otra persona" : "en tránsito"}</p>
                   <HopTrack hops={item.currentHop ?? item.hopCount} total={item.hopsTarget} />
                 </>
               )}
@@ -145,7 +145,7 @@ export default function PelucheDetail() {
           {(item.evolution ?? 1) < 3 && <section className="rounded-2xl border-2 border-ink bg-mist p-4 shadow-[3px_3px_0_var(--color-ink)]">
             <div className="flex items-start gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-ink bg-paper"><Sparkles className="h-5 w-5 text-lagoon" aria-hidden="true" /></span>
-              <div className="min-w-0 flex-1"><h2 className="font-display text-lg">EvoluciÃ³n {EVOLUTION_STAGES[((item.evolution ?? 1) + 1) as 2 | 3].name}</h2><p className="mt-1 text-sm text-ink/70">ReÃºne los repetidos necesarios de esta especie para mejorar su tarjeta.</p><p className="mt-1 text-xs font-bold">{Math.min(item.duplicateCount, EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates)} / {EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates} repetidos</p></div>
+              <div className="min-w-0 flex-1"><h2 className="font-display text-lg">Evolución {EVOLUTION_STAGES[((item.evolution ?? 1) + 1) as 2 | 3].name}</h2><p className="mt-1 text-sm text-ink/70">Reúne los repetidos necesarios de esta especie para mejorar su tarjeta.</p><p className="mt-1 text-xs font-bold">{Math.min(item.duplicateCount, EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates)} / {EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates} repetidos</p></div>
             </div>
             <button type="button" onClick={() => void handleEvolve()} disabled={item.duplicateCount < EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates || busy} className="btn btn-ink mt-3 w-full disabled:cursor-not-allowed disabled:opacity-45">{item.duplicateCount >= EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates ? "Evolucionar ahora" : `Faltan ${EVOLUTION_COSTS[((item.evolution ?? 1) + 1) as 2 | 3].duplicates - item.duplicateCount}`}</button>
           </section>}
@@ -155,12 +155,12 @@ export default function PelucheDetail() {
           <div>
             <h2 className="text-2xl">Su libreta</h2>
           </div>
-          {notes === undefined && <p role="status">Abriendo la libretaâ€¦</p>}
+          {notes === undefined && <p role="status">Abriendo la libreta…</p>}
           {notes?.length === 0 && (
             <p className="text-sm text-ink/70">
               {item.status === "traveling"
-                ? "EstÃ¡ reuniendo notas. PodrÃ¡s leerlas cuando vuelva."
-                : "TodavÃ­a no hay notas. Su primer viaje empieza con una frase tuya."}
+                ? "Está reuniendo notas. Podrás leerlas cuando vuelva."
+                : "Todavía no hay notas. Su primer viaje empieza con una frase tuya."}
             </p>
           )}
           <NoteGrid>
@@ -170,7 +170,7 @@ export default function PelucheDetail() {
                   key={entry._id}
                   compact
                   body={entry.body}
-                  alias={`${entry.author.alias ?? "Alguien"}${entry.author.isNpc ? " Â· Demo" : ""}`}
+                  alias={`${entry.author.alias ?? "Alguien"}${entry.author.isNpc ? " · Demo" : ""}`}
                   coverId={entry.cover}
                   effectId={entry.effect}
                   themeId={entry.theme}
@@ -219,10 +219,10 @@ export default function PelucheDetail() {
             className="w-full max-w-sm rounded-3xl border-2 border-ink bg-paper p-5 text-ink shadow-[6px_6px_0_var(--color-ink)]"
           >
             <h2 id="delete-note-title" className="text-2xl">
-              Â¿Borrar esta nota?
+              ¿Borrar esta nota?
             </h2>
             <p className="mt-2 text-sm text-ink/70">
-              Se quitarÃ¡ de tu libreta.
+              Se quitará de tu libreta.
             </p>
             <div className="mt-5 flex gap-3">
               <button
