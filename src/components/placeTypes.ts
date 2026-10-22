@@ -1,0 +1,24 @@
+export type Place = {
+  id: string;
+  name: string;
+  kind: string;
+  whatItIs: string;
+  cost: string;
+  hours: string;
+  howToContact: string;
+  whatHappens: string;
+  story: string;
+  challengeLabel: string;
+  source: string;
+  sourceDate: string;
+  phone: string | null;
+  whatsapp: string | null;
+  mapX: number;
+  mapY: number;
+  anchorX: number;
+  anchorY: number;
+  rescued: boolean;
+  order: number | null;
+  rewardedToday: number;
+  rewardCapReached: boolean;
+};

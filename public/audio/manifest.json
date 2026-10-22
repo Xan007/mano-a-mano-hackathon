@@ -1,0 +1,135 @@
+[
+  {
+    "file": "click.mp3",
+    "seconds": 0.06,
+    "bytes": 1611,
+    "peakDb": -18.9,
+    "sha256": "eb4a6175a0c4c126990f2cd816a682d7b12185ad4bee8d3d6563c490a2e32ed4",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/interface-sounds",
+    "originalFile": "Audio/click_001.ogg"
+  },
+  {
+    "file": "page.mp3",
+    "seconds": 0.231,
+    "bytes": 3492,
+    "peakDb": -5.9,
+    "sha256": "893e5e02d483ce78b691961e1f402ba1ba476e3c34382164877253477b67402a",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/rpg-audio",
+    "originalFile": "Audio/bookFlip3.ogg"
+  },
+  {
+    "file": "search.mp3",
+    "seconds": 0.491,
+    "bytes": 6626,
+    "peakDb": -12.9,
+    "sha256": "2192e2cf7968c7fd2174f2e045330a724fe6044f628970cbc6fe2eb497569dda",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/interface-sounds",
+    "originalFile": "Audio/question_001.ogg"
+  },
+  {
+    "file": "message.mp3",
+    "seconds": 0.1,
+    "bytes": 1924,
+    "peakDb": -10.2,
+    "sha256": "3eafa4be766aa2335fa7f843e43cf2f3fb1cdc26f1d8089fa513b984f8c640cb",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/interface-sounds",
+    "originalFile": "Audio/pluck_001.ogg"
+  },
+  {
+    "file": "success.mp3",
+    "seconds": 0.539,
+    "bytes": 7253,
+    "peakDb": -12.1,
+    "sha256": "cdc19d32c1fde0c17628e3729da1256272838f82bdcd6456276721250a327a7a",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/interface-sounds",
+    "originalFile": "Audio/confirmation_002.ogg"
+  },
+  {
+    "file": "error.mp3",
+    "seconds": 0.162,
+    "bytes": 2865,
+    "peakDb": -6.0,
+    "sha256": "47c89d0b0cbaff7fc30cff7e1548ea5c3c50b8cb5c70651908d012dd094107b5",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/interface-sounds",
+    "originalFile": "Audio/error_001.ogg"
+  },
+  {
+    "file": "coin.mp3",
+    "seconds": 0.534,
+    "bytes": 7253,
+    "peakDb": -10.1,
+    "sha256": "1d9f0ab42dca14d63bfbeb617d06d12e20ad5d3e1e584675d62532476b406cea",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/music-jingles",
+    "originalFile": "Audio/Pizzicato jingles/jingles_PIZZI05.ogg"
+  },
+  {
+    "file": "common.mp3",
+    "seconds": 0.494,
+    "bytes": 6626,
+    "peakDb": -9.1,
+    "sha256": "2e6ee8a303c1f2714ffea19db49f37425c25e4d649f43b19efd49d0a63f1f910",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/music-jingles",
+    "originalFile": "Audio/Pizzicato jingles/jingles_PIZZI00.ogg"
+  },
+  {
+    "file": "rare.mp3",
+    "seconds": 0.994,
+    "bytes": 12896,
+    "peakDb": -10.9,
+    "sha256": "ec5601b2ccce6b522f11cc7ec0bf3db762f0bb80167154e551b74078d3be7d96",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/music-jingles",
+    "originalFile": "Audio/Pizzicato jingles/jingles_PIZZI01.ogg"
+  },
+  {
+    "file": "epic.mp3",
+    "seconds": 0.951,
+    "bytes": 12269,
+    "peakDb": -11.1,
+    "sha256": "46826725ab244ecf98ff47497c7c4ac8f67c495eed20d5007bcef9c0cb6a25d2",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/music-jingles",
+    "originalFile": "Audio/Pizzicato jingles/jingles_PIZZI02.ogg"
+  },
+  {
+    "file": "legendary.mp3",
+    "seconds": 1.145,
+    "bytes": 14463,
+    "peakDb": -11.7,
+    "sha256": "e7e369cd9e60097218556b1a2bbad4b84655610e3db6b20fc7563b62595e5d06",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/music-jingles",
+    "originalFile": "Audio/Pizzicato jingles/jingles_PIZZI03.ogg"
+  },
+  {
+    "file": "departure.mp3",
+    "seconds": 0.21,
+    "bytes": 3492,
+    "peakDb": -5.6,
+    "sha256": "5a6536edfc77249468475d3151804e9dc1f66d496c6647a8e5472e924b8a3a13",
+    "author": "jsbarrett",
+    "license": "CC0-1.0",
+    "source": "https://freesound.org/people/jsbarrett/sounds/393943/",
+    "originalFile": "https://cdn.freesound.org/previews/393/393943_3159560-hq.mp3",
+    "cropStartSeconds": 1.49
+  }
+]
