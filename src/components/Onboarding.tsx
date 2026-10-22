@@ -1,7 +1,6 @@
 import { AccountModal } from "./AccountAccess";
 import { useCalmMotion as useReducedMotion } from "../lib/motion";
 import { useState } from "react";
-import { Link } from "react-router";
 import { errorMessage } from "../lib/errors";
 import { useAction, useQuery } from "convex/react";
 import { m as motion } from "motion/react";
@@ -59,7 +58,6 @@ export function Onboarding() {
           <Brand />
           <div className="flex flex-wrap items-center justify-end gap-2">
             <SoundToggle className="h-11 w-11" />
-            {(me?.staffRole || me?.publicDemo) && <Link to="/admin" className="btn btn-ghost">Panel demo</Link>}
             <button
               type="button"
               onClick={() => setLoginOpen(true)}
