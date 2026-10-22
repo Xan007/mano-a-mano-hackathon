@@ -10,6 +10,7 @@ import { AuthScreen } from "./components/AuthScreen";
 import { Onboarding } from "./components/Onboarding";
 import { Brand } from "./components/Brand";
 import { Nav } from "./components/Nav";
+import { SupportNudge } from "./components/SupportNudge";
 import { loadCasa, loadMapa } from "./lib/tourRoutes";
 const GoogleReturn = lazy(() => import("./components/GoogleAccess").then(module => ({ default: module.GoogleReturn })));
 const Casa = lazy(loadCasa);
@@ -73,6 +74,7 @@ function Shell({
         keys={me.keys}
         xp={me.xp}
       />
+      <SupportNudge />
       <main className="mx-auto w-full max-w-5xl px-4 pb-[calc(11rem+env(safe-area-inset-bottom))] pt-5 sm:px-6 md:pb-14 md:pt-6">
         <motion.div
           key={location.pathname}
