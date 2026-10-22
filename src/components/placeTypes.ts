@@ -21,4 +21,6 @@ export type Place = {
   order: number | null;
   rewardedToday: number;
   rewardCapReached: boolean;
+  rescueLevel: number;
+  nextRescueAt: number | null;
 };

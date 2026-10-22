@@ -192,6 +192,8 @@ export default defineSchema({
     day: v.string(),
     plushId: v.id("plushItems"),
     createdAt: v.number(),
+    rescueLevel: v.optional(v.number()),
+    nextRescueAt: v.optional(v.number()),
   })
     .index("by_player", ["playerId", "createdAt"])
     .index("by_player_place", ["playerId", "placeId"]),

@@ -16,6 +16,10 @@ import {
 } from "../config/places";
 import { journeyScene } from "../config/journey";
 import { PLUSH } from "../config/game";
+import { publicDemoEnabled } from "./lib/publicDemo";
+
+const RESCUE_COOLDOWN_PRODUCTION_MS = 30 * 60 * 1000;
+const RESCUE_COOLDOWN_DEMO_MS = 5 * 60 * 1000;
 
 export const reportChannel = mutation({
   args: {
@@ -70,8 +74,15 @@ async function pickCatalog(ctx: MutationCtx, rarity: Rarity) {
   return options[Math.floor(Math.random() * options.length)];
 }
 
-async function pickStageCatalog(ctx: MutationCtx, placeId: string) {
-  const rarity = drawRarityFrom(rescueStage(placeId).weights);
+async function pickStageCatalog(ctx: MutationCtx, placeId: string, level = 1) {
+  const base = rescueStage(placeId).weights;
+  const boosted = level <= 1 ? base : {
+    comun: Math.max(0, base.comun - (level - 1) * 8),
+    raro: base.raro + (level - 1) * 4,
+    epico: base.epico + (level - 1) * 3,
+    legendario: base.legendario + (level - 1),
+  };
+  const rarity = drawRarityFrom(boosted);
   return pickCatalog(ctx, rarity);
 }
 
@@ -82,6 +93,8 @@ export const list = query({
     if (!me) return null;
 
     const day = dayKey(Date.now());
+    const demoMode = await publicDemoEnabled(ctx);
+    const cooldownMs = demoMode ? RESCUE_COOLDOWN_DEMO_MS : RESCUE_COOLDOWN_PRODUCTION_MS;
     const places = PLACES;
     const active = [...places].sort(
       (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
@@ -139,6 +152,8 @@ export const list = query({
         order: order.get(place.slug) ?? null,
         rewardedToday,
         rewardCapReached: rewardedToday >= PLACE_REPEAT_REWARD_LIMIT,
+        rescueLevel: rescuedAt.get(place.slug)?.rescueLevel ?? 1,
+        nextRescueAt: rescuedAt.get(place.slug)?.nextRescueAt ?? (rescuedAt.has(place.slug) ? (rescuedAt.get(place.slug)!.createdAt + cooldownMs) : null),
       };
     });
 
@@ -202,8 +217,10 @@ export const startVisit = mutation({
           `Primero completa la historia de ${placeBySlug(required)!.name}.`,
         );
     }
-    const previousItem = previous ? await ctx.db.get(previous.plushId) : null;
-    const pending = previousItem
+    if (previous?.nextRescueAt && previous.nextRescueAt > Date.now()) {
+      throw new ConvexError("Este territorio todavía se está recuperando.");
+    }
+    const pending = previous
       ? null
       : (await ctx.db
           .query("placeSessions")
@@ -214,9 +231,10 @@ export const startVisit = mutation({
     const pendingCatalog = pending?.rewardCatalogId
       ? await ctx.db.get(pending.rewardCatalogId)
       : null;
-    const reward = previousItem
-      ? await ctx.db.get(previousItem.catalogId)
-      : pendingCatalog ?? await pickStageCatalog(ctx, placeId);
+    const rescueLevel = (previous?.rescueLevel ?? 1) + (previous ? 1 : 0);
+    const reward = previous
+      ? await pickStageCatalog(ctx, placeId, rescueLevel)
+      : pendingCatalog ?? await pickStageCatalog(ctx, placeId, 1);
     if (!reward) throw new ConvexError("No pudimos preparar el peluche.");
     const sessionId = await ctx.db.insert("placeSessions", {
       playerId: me._id,
@@ -294,6 +312,8 @@ export const answer = mutation({
       )
       .first();
     const firstRescue = !existingRescue;
+    const rescueLevel = (existingRescue?.rescueLevel ?? 1) + (existingRescue ? 1 : 0);
+    const demoMode = await publicDemoEnabled(ctx);
 
     const visitsToday = await ctx.db
       .query("placeVisits")
@@ -307,6 +327,8 @@ export const answer = mutation({
 
     let tokensEarned = 0;
     let rewarded = false;
+    const cooldownMs = demoMode ? RESCUE_COOLDOWN_DEMO_MS : RESCUE_COOLDOWN_PRODUCTION_MS;
+    const nextRescueAt = Date.now() + cooldownMs;
     if (firstRescue) {
       tokensEarned = PLACE_FIRST_TOKENS;
       rewarded = true;
@@ -344,6 +366,8 @@ export const answer = mutation({
         day,
         plushId,
         createdAt: Date.now(),
+        rescueLevel: 1,
+        nextRescueAt,
       });
 
       plush = {
@@ -352,6 +376,19 @@ export const answer = mutation({
         outfit: catalog.outfit,
         imagePath: catalog.imagePath,
       };
+    } else {
+      const catalog = session.rewardCatalogId ? await ctx.db.get(session.rewardCatalogId) : null;
+      if (!catalog) throw new ConvexError("No encontramos el peluche de esta historia.");
+      const plushId = await ctx.db.insert("plushItems", {
+        catalogId: catalog._id,
+        originId: me._id,
+        status: "collection",
+        hopCount: 0,
+        hopsTarget: PLUSH.HOPS_TARGET,
+        createdAt: Date.now(),
+      });
+      await ctx.db.patch(existingRescue!._id, { plushId, day, createdAt: Date.now(), rescueLevel, nextRescueAt });
+      plush = { rarity: catalog.rarity, species: catalog.species, outfit: catalog.outfit, imagePath: catalog.imagePath };
     }
 
     await ctx.db.insert("placeVisits", {
@@ -398,6 +435,8 @@ export const answer = mutation({
       sourceDate: capsule.sourceDate,
       rescuedToday,
       totalPlaces,
+      nextRescueAt,
+      rescueCooldownMs: cooldownMs,
       legendaryAwarded,
       legendaryKeys,
     };

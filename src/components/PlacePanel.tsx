@@ -30,6 +30,7 @@ type Answer = {
   correct: boolean;
   explanation: string;
   plush?: { species: string; imagePath: string } | null;
+  firstRescue?: boolean;
 };
 
 export function PlacePanel({
@@ -237,6 +238,9 @@ export function PlacePanel({
                   </p>
                 </div>
               </motion.div>
+            )}
+            {result.firstRescue && result.plush && (
+              <p className="rounded-xl bg-mist p-3 text-sm font-semibold">Cuando el contador de este territorio termine podrás volver a rescatar otra mascota aquí.</p>
             )}
             {result.correct ? (
               <button

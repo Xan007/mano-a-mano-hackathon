@@ -12,6 +12,12 @@ import { PlacePanel, type Place } from "../components/PlacePanel";
 import { PlushArt } from "../components/PlushArt";
 import { cn } from "../lib/utils";
 import { CityMapScene } from "../components/CityMapScene";
+import { useNow } from "../lib/useNow";
+
+function countdown(ms: number) {
+  const total = Math.ceil(Math.max(0, ms) / 1000);
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
 
 export default function Mapa() {
   const token = useToken();
@@ -24,6 +30,7 @@ export default function Mapa() {
   const mapViewport = useRef<HTMLDivElement>(null);
   const centered = useRef(false);
   const [rescueSnapshot, setRescueSnapshot] = useState<string[]>([]);
+  const now = useNow(1000);
 
   useEffect(() => {
     const viewport = mapViewport.current;
@@ -136,7 +143,7 @@ export default function Mapa() {
                   top: `clamp(2.1rem, ${(position?.ay ?? place.anchorY) * 100}%, calc(100% - 2.1rem))`,
                 }}
               >
-                <span>{place.name}</span>
+                <span className="inline-flex items-center gap-2"><span>{place.name}</span>{place.rescued && place.nextRescueAt !== null && <span className="rounded-full bg-ink/10 px-1.5 py-0.5 font-mono text-[9px] tabular-nums" aria-label="Tiempo para volver a rescatar">{countdown(place.nextRescueAt - now)}</span>}</span>
               </div>
             );
           })}

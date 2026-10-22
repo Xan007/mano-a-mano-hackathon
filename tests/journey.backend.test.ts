@@ -47,6 +47,10 @@ async function rescue(
   token: string,
   perspective: "self" | "others" = "self",
 ) {
+  const places = await t.query(api.places.list, { token });
+  if (places?.places.find((place) => place.id === "clinica")?.rescued) {
+    vi.advanceTimersByTime(31 * 60 * 1000);
+  }
   const visit = await t.mutation(api.places.startVisit, {
     token,
     placeId: "clinica",
@@ -251,6 +255,7 @@ describe("recorrido controlado de Mano a Mano", () => {
     actual.forEach((rarity, index) => {
       expect(RESCUE_STAGES[index].weights[rarity!]).toBeGreaterThan(0);
     });
+    vi.advanceTimersByTime(31 * 60 * 1000);
     const retry = await t.mutation(api.places.startVisit, { token, placeId: "clinica" });
     expect(retry.reward.rarity).toBe("comun");
     expect((await t.query(api.places.list, { token }))?.rescuedCount).toBe(8);
@@ -524,7 +529,7 @@ describe("recorrido controlado de Mano a Mano", () => {
         option: journeyScene("clinica", perspective)!.answer,
       });
       await rescue(t, token, perspective);
-      expect(await t.query(api.plush.getMyPlushes, { token })).toHaveLength(1);
+      expect(await t.query(api.plush.getMyPlushes, { token })).toHaveLength(2);
     },
   );
 
