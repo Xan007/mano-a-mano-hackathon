@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { mutation, query, internalMutation, type MutationCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
-import { requireStaff, roleFor } from "./lib/auth";
+import { requirePanelViewer, requireStaff, roleFor } from "./lib/auth";
 import { createDemoWorld, resetDemoWorld } from "./lib/demo";
 import { OWNER_EMAIL, LIVE_HOLD_MS, DEMO_HOLD_MS } from "../config/operations";
 import { SUPPORT_CHANNELS } from "../config/support";
@@ -24,7 +24,7 @@ async function audit(ctx: MutationCtx, actor: Doc<"players">, action: string, ta
 }
 
 export const access = query({ args: { token: v.string() }, handler: async (ctx, { token }) => {
-  try { const { actor, role, session } = await requireStaff(ctx, token); return { role, email: actor.verifiedEmail!, demo: Boolean(session.demoPlayerId), publicDemo: await publicDemoEnabled(ctx) }; }
+  try { const { actor, role, session } = await requirePanelViewer(ctx, token); return { role, email: actor.verifiedEmail ?? actor.alias ?? "Participante", demo: Boolean(session.demoPlayerId), publicDemo: await publicDemoEnabled(ctx) }; }
   catch { return null; }
 } });
 
@@ -54,27 +54,30 @@ export const resetDemo = mutation({ args: { token: v.string() }, handler: async 
 } });
 
 export const overview = query({ args: { token: v.string() }, handler: async (ctx, { token }) => {
-  const { actor, session } = await requireStaff(ctx, token);
+  const { actor, session, role } = await requirePanelViewer(ctx, token);
   const demo = Boolean(session.demoPlayerId);
+  const shared = role === "viewer";
   const [players, notes, reports] = await Promise.all([ctx.db.query("players").take(2001), ctx.db.query("notes").order("desc").take(2001), ctx.db.query("channelReports").order("desc").take(1001)]);
-  const people = players.filter(p => demo ? p.demoOwnerId === actor._id : !p.isDemo && !p.isNpc);
-  const messages = notes.filter(n => demo ? n.demoOwnerId === actor._id : !n.isDemo || n.isPublicDemo);
+  const people = players.filter(p => shared ? p.isPublicNpc === true : demo ? p.demoOwnerId === actor._id : !p.isDemo && !p.isNpc);
+  const messages = notes.filter(n => shared ? n.isPublicDemo === true : demo ? n.demoOwnerId === actor._id : !n.isDemo || n.isPublicDemo);
+  const visibleReports = reports.filter(r => shared ? r.synthetic : r.synthetic === demo);
   return { people: people.length, banned: people.filter(p => p.bannedAt).length, notes: messages.length,
     pendingNotes: messages.filter(n => n.moderationStatus === "pending" || (n.hidden && !n.moderationStatus)).length,
-    pendingChannels: reports.filter(r => r.synthetic === demo && r.status === "pending").length,
-    bounded: players.length > 2000 || notes.length > 2000 || reports.length > 1000, demo,
+    pendingChannels: visibleReports.filter(r => r.status === "pending").length,
+    bounded: players.length > 2000 || notes.length > 2000 || reports.length > 1000, demo, publicDemo: await publicDemoEnabled(ctx),
     holdMs: demo ? DEMO_HOLD_MS : LIVE_HOLD_MS };
 } });
 
 export const users = query({ args: { token: v.string(), paginationOpts: paginationOptsValidator }, handler: async (ctx, { token, paginationOpts }) => {
-  const { actor, session } = await requireStaff(ctx, token);
-  const result = await ctx.db.query("players").filter(q => session.demoPlayerId ? q.eq(q.field("demoOwnerId"), actor._id) : q.and(q.neq(q.field("isDemo"), true), q.eq(q.field("isNpc"), false))).order("desc").paginate(paginationOpts);
+  const { actor, session, role } = await requirePanelViewer(ctx, token);
+  const result = await ctx.db.query("players").filter(q => role === "viewer" ? q.eq(q.field("isPublicNpc"), true) : session.demoPlayerId ? q.eq(q.field("demoOwnerId"), actor._id) : q.and(q.neq(q.field("isDemo"), true), q.eq(q.field("isNpc"), false))).order("desc").paginate(paginationOpts);
   return { ...result, page: result.page.map(safePlayer) };
 } });
 
 export const userDetail = query({ args: { token: v.string(), playerId: v.id("players") }, handler: async (ctx, { token, playerId }) => {
-  await requireStaff(ctx, token);
+  const { role } = await requirePanelViewer(ctx, token);
   const p = await ctx.db.get(playerId); if (!p) return null;
+  if (role === "viewer" && !p.isPublicNpc) return null;
   const [items, notes] = await Promise.all([ctx.db.query("plushItems").withIndex("by_origin", q => q.eq("originId", p._id)).take(101), ctx.db.query("notes").withIndex("by_author", q => q.eq("authorId", p._id)).order("desc").take(101)]);
   return { player: safePlayer(p), plushes: await Promise.all(items.slice(0,100).map(async item => ({ ...item, catalog: await ctx.db.get(item.catalogId) }))), notes: notes.slice(0,100), truncated: items.length > 100 || notes.length > 100 };
 } });
@@ -90,9 +93,9 @@ export const banUser = mutation({ args: { token: v.string(), playerId: v.id("pla
 } });
 
 export const notes = query({ args: { token: v.string(), status: v.union(v.literal("all"), v.literal("pending"), v.literal("published"), v.literal("removed")), paginationOpts: paginationOptsValidator }, handler: async (ctx, { token, status, paginationOpts }) => {
-  const { actor, session } = await requireStaff(ctx, token);
+  const { actor, session, role } = await requirePanelViewer(ctx, token);
   const result = await ctx.db.query("notes").filter(q => q.and(
-    session.demoPlayerId ? q.eq(q.field("demoOwnerId"), actor._id) : q.or(q.neq(q.field("isDemo"), true), q.eq(q.field("isPublicDemo"), true)),
+    role === "viewer" ? q.eq(q.field("isPublicDemo"), true) : session.demoPlayerId ? q.eq(q.field("demoOwnerId"), actor._id) : q.or(q.neq(q.field("isDemo"), true), q.eq(q.field("isPublicDemo"), true)),
     status === "all" ? q.eq(true, true) : status === "pending" ? q.or(q.eq(q.field("moderationStatus"), "pending"), q.and(q.eq(q.field("hidden"), true), q.eq(q.field("moderationStatus"), undefined))) : status === "published" ? q.and(q.eq(q.field("hidden"), false), q.neq(q.field("moderationStatus"), "removed")) : q.eq(q.field("moderationStatus"), "removed")
   )).order("desc").paginate(paginationOpts);
   return { ...result, page: await Promise.all(result.page.map(async note => ({ ...note, author: safePlayer((await ctx.db.get(note.authorId))!), reports: (await ctx.db.query("reports").withIndex("by_note", q => q.eq("noteId", note._id)).take(100)).length }))) };
@@ -108,8 +111,8 @@ export const moderateNote = mutation({ args: { token: v.string(), noteId: v.id("
 } });
 
 export const channelReports = query({ args: { token: v.string(), paginationOpts: paginationOptsValidator }, handler: async (ctx, { token, paginationOpts }) => {
-  const { session } = await requireStaff(ctx, token);
-  return await ctx.db.query("channelReports").filter(q => q.eq(q.field("synthetic"), Boolean(session.demoPlayerId))).order("desc").paginate(paginationOpts);
+  const { session, role } = await requirePanelViewer(ctx, token);
+  return await ctx.db.query("channelReports").filter(q => q.eq(q.field("synthetic"), role === "viewer" ? true : Boolean(session.demoPlayerId))).order("desc").paginate(paginationOpts);
 } });
 
 export const resolveChannelReport = mutation({ args: { token: v.string(), reportId: v.id("channelReports"), status: v.union(v.literal("resolved"), v.literal("dismissed")), reason: v.string() }, handler: async (ctx, { token, reportId, status, reason: raw }) => {
@@ -133,7 +136,11 @@ export const setModerator = mutation({ args: { token: v.string(), email: v.strin
 } });
 
 export const activity = query({ args: { token: v.string(), paginationOpts: paginationOptsValidator }, handler: async (ctx, { token, paginationOpts }) => {
-  await requireStaff(ctx, token); return await ctx.db.query("adminAudit").order("desc").paginate(paginationOpts);
+  const { role } = await requirePanelViewer(ctx, token);
+  const audit = ctx.db.query("adminAudit");
+  return role === "viewer"
+    ? await audit.filter(q => q.eq(q.field("demo"), true)).order("desc").paginate(paginationOpts)
+    : await audit.order("desc").paginate(paginationOpts);
 } });
 
 export const updateChannel = mutation({ args: { token: v.string(), channelId: v.union(v.literal("local"), v.literal("national")), phone: v.string(), whatsapp: v.string(), hours: v.string(), cost: v.string(), paused: v.boolean(), sourceUrl: v.string(), verifiedAt: v.string(), reason: v.string() }, handler: async (ctx, { token, reason: raw, ...fields }) => {

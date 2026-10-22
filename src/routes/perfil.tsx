@@ -49,7 +49,7 @@ export default function Perfil() {
         <ArrowRight className="h-5 w-5" aria-hidden="true" />
       </Link>
       <section className="card space-y-3 p-5"><h2 className="text-xl">Tu cuenta</h2><AccountAccess initialAlias={me.alias ?? ""} saved={me.hasPassword || me.hasGoogle} loginName={me.loginName} /></section>
-      {me.staffRole && <Link to="/admin" className="tile flex items-center gap-3 bg-mist p-5"><Shield className="h-6 w-6"/><span className="flex-1 font-bold">Administración y moderación</span><ArrowRight className="h-5 w-5"/></Link>}
+      {(me.staffRole || me.publicDemo) && <Link to="/admin" className="tile flex items-center gap-3 bg-mist p-5"><Shield className="h-6 w-6"/><span className="flex-1 font-bold">{me.staffRole ? "Administración y moderación" : "Ver panel demo"}</span><ArrowRight className="h-5 w-5"/></Link>}
       <Link to="/taller" className="tile flex items-center gap-4 bg-mist p-5">
         <Palette className="h-6 w-6 shrink-0" aria-hidden="true" />
         <div className="flex-1">

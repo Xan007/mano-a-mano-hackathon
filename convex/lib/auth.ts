@@ -1,6 +1,7 @@
 import { ConvexError } from "convex/values";
 import type { QueryCtx, MutationCtx } from "../_generated/server";
 import { OWNER_EMAIL } from "../../config/operations";
+import { publicDemoEnabled } from "./publicDemo";
 
 type AnyCtx = QueryCtx | MutationCtx;
 
@@ -30,6 +31,17 @@ export async function requireStaff(ctx: AnyCtx, token: string, ownerOnly = false
   const role = identity && await roleFor(ctx, identity.actor);
   if (!identity || !role || (ownerOnly && role !== "admin")) throw new ConvexError("No tienes permisos para esta acción.");
   return { ...identity, role };
+}
+
+// Read-only access for participants while the shared demo is active. Mutations
+// continue to use requireStaff, so viewers cannot change environments or data.
+export async function requirePanelViewer(ctx: AnyCtx, token: string) {
+  const identity = await sessionIdentity(ctx, token);
+  if (!identity || identity.actor.bannedAt) throw new ConvexError("No tienes permisos para ver el panel.");
+  const role = await roleFor(ctx, identity.actor);
+  if (role) return { ...identity, role };
+  if (await publicDemoEnabled(ctx)) return { ...identity, role: "viewer" as const };
+  throw new ConvexError("No tienes permisos para ver el panel.");
 }
 
 export async function getPlayer(ctx: AnyCtx, token: string) {

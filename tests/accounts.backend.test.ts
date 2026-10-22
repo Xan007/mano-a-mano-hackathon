@@ -75,6 +75,6 @@ describe("Cuentas recuperables",()=>{
   vi.stubGlobal("fetch",vi.fn(async(input:RequestInfo|URL)=>String(input).startsWith(ACCOUNT_ISSUER) ? new Response(JSON.stringify({keys:[jwk]})) : new Response(JSON.stringify({id:"google-test-user",primary_email_address_id:"primary",email_addresses:[{id:"primary",email_address:"sierrasander29@gmail.com",verification:{status:"unverified"}}]}))));
   const t=convexTest(schema,modules);const result=await t.action(api.credentials.google,{credential:await jwt()});
   expect((await t.query(api.auth.me,{token:result.token}))?.staffRole).toBeNull();
-  expect(await t.query(api.admin.access,{token:result.token})).toBeNull();
+  expect((await t.query(api.admin.access,{token:result.token}))?.role).toBe("viewer");
  });
 });

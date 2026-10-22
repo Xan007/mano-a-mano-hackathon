@@ -19,8 +19,8 @@ describe("Administración, separación de entornos y moderación",()=>{
   it("deniega todas las operaciones del equipo a invitados y a un apodo que imita el correo administrador",async()=>{
     const {t}=await setup();const guest=await t.mutation(api.auth.createDemo,{});const me=await t.query(api.auth.me,guest);
     await t.run(ctx=>ctx.db.patch(me!._id,{alias:OWNER_EMAIL,username:OWNER_EMAIL}));
-    expect(await t.query(api.admin.access,guest)).toBeNull();
-    await expect(t.query(api.admin.overview,guest)).rejects.toThrow(/permisos/);
+    expect((await t.query(api.admin.access,guest))?.role).toBe("viewer");
+    expect((await t.query(api.admin.overview,guest))?.publicDemo).toBe(true);
     await expect(t.mutation(api.admin.setDemo,{...guest,enabled:true})).rejects.toThrow(/permisos/);
     await expect(t.mutation(api.admin.setPublicDemo,{...guest,enabled:false})).rejects.toThrow(/permisos/);
     await expect(t.mutation(api.admin.setModerator,{...guest,email:"equipo@example.com",active:true})).rejects.toThrow(/permisos/);
@@ -33,8 +33,8 @@ describe("Administración, separación de entornos y moderación",()=>{
     await expect(t.mutation(api.admin.setModerator,{...mod,email:"otro@example.com",active:true})).rejects.toThrow(/permisos/);
     await expect(t.mutation(api.admin.setDemo,{...mod,enabled:true})).rejects.toThrow(/permisos/);
     await t.mutation(api.admin.setModerator,{...owner,email:"equipo@example.com",active:false});
-    expect(await t.query(api.admin.access,mod)).toBeNull();
-    await expect(t.query(api.admin.overview,mod)).rejects.toThrow(/permisos/);
+    expect((await t.query(api.admin.access,mod))?.role).toBe("viewer");
+    expect((await t.query(api.admin.overview,mod))?.publicDemo).toBe(true);
   });
   it("crea una presentación decorada independiente y regresa a la misma cuenta y progreso reales",async()=>{
     const {t,owner,ownerId}=await setup();

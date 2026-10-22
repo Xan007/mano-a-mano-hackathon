@@ -59,7 +59,7 @@ export function Onboarding() {
           <Brand />
           <div className="flex flex-wrap items-center justify-end gap-2">
             <SoundToggle className="h-11 w-11" />
-            {me?.staffRole && <Link to="/admin" className="btn btn-ghost">Administración</Link>}
+            {(me?.staffRole || me?.publicDemo) && <Link to="/admin" className="btn btn-ghost">Panel demo</Link>}
             <button
               type="button"
               onClick={() => setLoginOpen(true)}

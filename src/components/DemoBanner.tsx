@@ -45,7 +45,7 @@ export function DemoBanner() {
   return (
     <div className="flex min-h-6 items-center justify-center gap-1.5 overflow-hidden bg-mango px-2 py-1 text-[11px] font-bold leading-none sm:text-xs">
       <FlaskConical className="h-3 w-3 shrink-0" aria-hidden="true" />
-      <span className="whitespace-nowrap">Demo compartida</span>
+      <Link to="/admin" className="whitespace-nowrap underline underline-offset-2">Demo compartida</Link>
     </div>
   );
 }
