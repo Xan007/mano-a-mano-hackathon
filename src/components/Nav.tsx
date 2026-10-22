@@ -11,7 +11,6 @@ import { cn } from "../lib/utils";
 import { Brand } from "./Brand";
 import { PlushArt } from "./PlushArt";
 import { PlusBadge } from "./PlusBadge";
-import { DemoBanner } from "./DemoBanner";
 import { SoundToggle } from "./SoundToggle";
 import { play } from "../lib/audio";
 
@@ -112,7 +111,6 @@ export function Nav({
   return (
     <>
       <header ref={header} data-testid="app-topbar" className="sticky top-0 z-40 border-b-2 border-ink bg-paper/95 backdrop-blur">
-        <DemoBanner />
         <div className="mx-auto flex w-full max-w-5xl items-center gap-2 px-4 py-2.5 sm:px-6">
           <NavLink
             to="/casa"
