@@ -213,6 +213,24 @@ export default function QuickTour({ playerId, completedAt, companionId }: {
               align: "start",
             },
           },
+          {
+            element: () => visibleTarget("support")!,
+            popover: {
+              title: "Todos los canales de apoyo",
+              description: "En Apoyo encuentras los canales disponibles y puedes consultarlos cuando quieras.",
+              side: "bottom",
+              align: "center",
+            },
+          },
+          {
+            element: () => visibleTarget("guide")!,
+            popover: {
+              title: "¿Necesitas una mano?",
+              description: "Si necesitas ayuda con cualquier cosa dentro de la página, toca este botón y pregúntame.",
+              side: "top",
+              align: "end",
+            },
+          },
         ],
       });
       tour.drive();

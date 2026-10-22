@@ -285,6 +285,7 @@ function Guide({ token }: { token: string }) {
           {!open && (
             <m.button
               type="button"
+              data-tour="guide"
               onClick={() => {
                 setHint(false);
                 setOpen(true);

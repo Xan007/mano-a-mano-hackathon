@@ -130,6 +130,7 @@ export function Nav({
               <NavLink
                 key={to}
                 to={to}
+                data-tour={to === "/apoyo" ? "support" : undefined}
                 title={badgeTitles[to]}
                 className={({ isActive }) =>
                   cn(
@@ -182,6 +183,7 @@ export function Nav({
               <NavLink
                 key={to}
                 to={to}
+                data-tour={to === "/apoyo" ? "support" : undefined}
                 title={badgeTitles[to]}
                 className={({ isActive }) =>
                   cn(
