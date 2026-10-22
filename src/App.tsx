@@ -1,11 +1,12 @@
 import { useCalmMotion as useReducedMotion } from "./lib/motion";
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "motion/react";
 import { Loader2 } from "lucide-react";
 import { api } from "../convex/_generated/api";
 import { useSession } from "./lib/session";
+import { MoodCheckIn } from "./components/MoodCheckIn";
 import { AuthScreen } from "./components/AuthScreen";
 import { Onboarding } from "./components/Onboarding";
 import { Brand } from "./components/Brand";
@@ -121,14 +122,23 @@ function Shell({
 }
 
 function PlayerGate({ token }: { token: string }) {
-  const { clear } = useSession();
+  const { clear, sessionStartedAt } = useSession();
   const location = useLocation();
+  const [moodOpen, setMoodOpen] = useState(false);
+  const [seenSession, setSeenSession] = useState<number | null>(null);
   const me = useQuery(api.auth.me, { token });
   const touch = useMutation(api.players.touch);
 
   useEffect(() => {
     if (me === null) clear();
   }, [me, clear]);
+
+  useEffect(() => {
+    if (sessionStartedAt && sessionStartedAt !== seenSession) {
+      setSeenSession(sessionStartedAt);
+      setMoodOpen(true);
+    }
+  }, [sessionStartedAt, seenSession]);
 
   useEffect(() => {
     const ping = () => { if (document.visibilityState === "visible") touch({ token }).catch(() => undefined); };
@@ -141,10 +151,11 @@ function PlayerGate({ token }: { token: string }) {
   if (me === null) return <Splash message="Cerrando sesión…" />;
   if (me.bannedAt) return <div className="mx-auto max-w-md space-y-4 p-6"><Brand/><h1 className="text-3xl">Cuenta suspendida</h1><p className="text-sm">El equipo de moderación suspendió esta cuenta.</p>{me.banReason&&<p className="rounded-xl bg-sand p-3 text-sm">{me.banReason}</p>}<button type="button" className="btn btn-ghost" onClick={clear}>Salir de mi cuenta</button></div>;
   if (location.pathname === "/admin") return <Suspense fallback={<Splash message="Abriendo administración…"/>}><Admin/></Suspense>;
-  if (location.pathname === "/apoyo" && !me.firstJourneyAt) return <Apoyo standalone />;
-  if (me.companion === "") return <Onboarding />;
-  if (!me.firstJourneyAt) return <FirstJourney />;
-  return <Shell me={me} />;
+  const checkIn = moodOpen ? <MoodCheckIn onClose={() => setMoodOpen(false)} /> : null;
+  if (location.pathname === "/apoyo" && !me.firstJourneyAt) return <>{checkIn}<Apoyo standalone /></>;
+  if (me.companion === "") return <>{checkIn}<Onboarding /></>;
+  if (!me.firstJourneyAt) return <>{checkIn}<FirstJourney /></>;
+  return <>{checkIn}<Shell me={me} /></>;
 }
 
 export default function App() {
