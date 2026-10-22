@@ -163,8 +163,8 @@ export const remove = mutation({
 });
 
 export const toggleLike = mutation({
-  args: { token: v.string(), noteId: v.id("notes") },
-  handler: async (ctx, { token, noteId }) => {
+  args: { token: v.string(), noteId: v.id("notes"), vote: v.union(v.literal("up"), v.literal("down")) },
+  handler: async (ctx, { token, noteId, vote }) => {
     const me = await requirePlayer(ctx, token);
     const note = await ctx.db.get(noteId);
     if (!note) throw new ConvexError("Esa nota no existe");
@@ -180,17 +180,21 @@ export const toggleLike = mutation({
       .withIndex("by_note_player", (q) => q.eq("noteId", noteId).eq("playerId", me._id))
       .first();
 
-    if (existing) {
+    if (existing?.vote === vote || (existing && existing.vote === undefined && vote === "up")) {
       await ctx.db.delete(existing._id);
+    } else if (existing) {
+      await ctx.db.patch(existing._id, { vote });
     } else {
       await ctx.db.insert("noteLikes", {
         noteId,
         playerId: me._id,
+        vote,
         createdAt: Date.now(),
       });
     }
 
     const state = await likeState(ctx, noteId, me._id);
+    await ctx.db.patch(noteId, { reputationHidden: state.autoHidden });
     return { ok: true, ...state };
   },
 });

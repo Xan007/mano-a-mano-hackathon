@@ -31,6 +31,7 @@ export default function Buzon() {
   const plushes = useQuery(api.plush.getMyPlushes, { token });
   const passPlush = useAction(api.plush.pass);
   const reportNote = useMutation(api.notes.report);
+  const voteNote = useMutation(api.notes.toggleLike);
   const ensureDaily = useMutation(api.mailbox.ensureDaily);
   const now = useNow(1000);
   const [activeTransitId, setActiveTransitId] = useState<string | null>(null);
@@ -113,6 +114,14 @@ export default function Buzon() {
     } catch (error) {
       play("error");
       toast.error(errorMessage(error, "No pudimos reportar la nota"));
+    }
+  }
+
+  async function handleVote(noteId: string, vote: "up" | "down") {
+    try {
+      await voteNote({ token, noteId: noteId as Id<"notes">, vote });
+    } catch (error) {
+      toast.error(errorMessage(error, "No pudimos actualizar la reputación"));
     }
   }
 
@@ -271,8 +280,11 @@ export default function Buzon() {
                           themeId={item.theme}
                           coverId={item.cover}
                           effectId={item.effect}
-                          likes={item.likes}
-                          liked={item.liked}
+                          upvotes={item.upvotes}
+                          downvotes={item.downvotes}
+                          vote={item.vote}
+                          reputationHidden={item.reputationHidden || item.autoHidden}
+                          onVote={(vote) => void handleVote(item._id, vote)}
                           compact
                           tilt={index % 2 === 0 ? -0.45 : 0.45}
                           onReport={() => handleReport(item._id)}

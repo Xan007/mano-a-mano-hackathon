@@ -24,6 +24,7 @@ export default function PelucheDetail() {
   const keep = useMutation(api.notes.makePermanent);
   const remove = useMutation(api.notes.remove);
   const report = useMutation(api.notes.report);
+  const voteNote = useMutation(api.notes.toggleLike);
   const [deleting, setDeleting] = useState<Id<"notes"> | null>(null);
   const [busy, setBusy] = useState(false);
   const reduce = useReducedMotion();
@@ -59,6 +60,11 @@ export default function PelucheDetail() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleVote(noteId: Id<"notes">, vote: "up" | "down") {
+    try { await voteNote({ token, noteId, vote }); }
+    catch (error) { toast.error(errorMessage(error, "No pudimos actualizar la reputación")); }
   }
 
   return (
@@ -148,6 +154,11 @@ export default function PelucheDetail() {
                   coverId={entry.cover}
                   effectId={entry.effect}
                   themeId={entry.theme}
+                  upvotes={entry.upvotes}
+                  downvotes={entry.downvotes}
+                  vote={entry.vote}
+                  reputationHidden={entry.reputationHidden || entry.autoHidden}
+                  onVote={(vote) => void handleVote(entry._id, vote)}
                   onReport={() => noteAction("report", entry._id)}
                   actions={
                     <>

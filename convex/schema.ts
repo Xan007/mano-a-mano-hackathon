@@ -155,6 +155,7 @@ export default defineSchema({
     moderationReason: v.optional(v.string()),
     moderatedBy: v.optional(v.id("players")),
     moderatedAt: v.optional(v.number()),
+      reputationHidden: v.optional(v.boolean()),
   })
     .index("by_plush", ["plushId", "hopIndex"])
     .index("by_author", ["authorId", "createdAt"])
@@ -219,6 +220,7 @@ export default defineSchema({
   noteLikes: defineTable({
     noteId: v.id("notes"),
     playerId: v.id("players"),
+      vote: v.optional(v.union(v.literal("up"), v.literal("down"))),
     createdAt: v.number(),
   })
     .index("by_note", ["noteId"])

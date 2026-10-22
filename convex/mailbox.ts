@@ -57,6 +57,7 @@ async function mailboxItem(
         alias: author?.alias ?? "Alguien del Llano",
         companion: author?.companion ?? null,
         isNpc: author?.isNpc ?? false,
+        reputationHidden: note.reputationHidden ?? false,
         ...(await likeState(ctx, note._id, me._id)),
       };
     }),
