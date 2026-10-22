@@ -128,8 +128,8 @@ function GuideDialog({
         {messages.length === 0 && !busy && (
           <div className="space-y-2">
             {[
+              "Canales de apoyo",
               "¿Cómo viajan los peluches?",
-              "¿Dónde veo apoyo para mí?",
               "¿Cómo escribo una nota?",
             ].map((question) => (
               <button
