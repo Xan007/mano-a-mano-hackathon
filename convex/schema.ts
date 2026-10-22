@@ -21,6 +21,7 @@ const transitState = v.union(
 );
 
 export default defineSchema({
+  appSettings: defineTable({ key: v.string(), enabled: v.boolean(), updatedAt: v.number(), updatedBy: v.optional(v.id("players")) }).index("by_key", ["key"]),
   staffMembers: defineTable({ email: v.string(), active: v.boolean(), grantedBy: v.id("players"), grantedAt: v.number(), revokedAt: v.optional(v.number()) }).index("by_email", ["email"]),
   adminAudit: defineTable({ actorId: v.id("players"), actorEmail: v.string(), action: v.string(), target: v.string(), reason: v.string(), createdAt: v.number(), demo: v.boolean() }).index("by_createdAt", ["createdAt"]),
   supportOverrides: defineTable({ channelId: v.union(v.literal("local"), v.literal("national")), phone: v.string(), whatsapp: v.optional(v.string()), hours: v.string(), cost: v.string(), paused: v.boolean(), sourceUrl: v.string(), verifiedAt: v.string(), updatedBy: v.id("players"), updatedAt: v.number() }).index("by_channel", ["channelId"]),
@@ -43,6 +44,7 @@ export default defineSchema({
     bannedBy: v.optional(v.id("players")),
     isDemo: v.optional(v.boolean()),
     demoOwnerId: v.optional(v.id("players")),
+    isPublicNpc: v.optional(v.boolean()),
     username: v.optional(v.string()),
     alias: v.optional(v.string()),
     companion: v.string(),
@@ -89,6 +91,7 @@ export default defineSchema({
     .index("by_clerk", ["clerkUserId"])
     .index("by_email", ["verifiedEmail"])
     .index("by_demo_owner", ["demoOwnerId"])
+    .index("by_public_npc", ["isPublicNpc"])
     .index("by_last_seen", ["lastSeenAt"]),
 
   sessions: defineTable({
@@ -135,6 +138,7 @@ export default defineSchema({
 
   notes: defineTable({
     isDemo: v.optional(v.boolean()),
+    isPublicDemo: v.optional(v.boolean()),
     demoOwnerId: v.optional(v.id("players")),
     plushId: v.id("plushItems"),
     authorId: v.id("players"),

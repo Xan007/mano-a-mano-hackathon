@@ -7,6 +7,7 @@ import { createDemoWorld, resetDemoWorld } from "./lib/demo";
 import { OWNER_EMAIL, LIVE_HOLD_MS, DEMO_HOLD_MS } from "../config/operations";
 import { SUPPORT_CHANNELS } from "../config/support";
 import { internal } from "./_generated/api";
+import { ensurePublicDemoNpcs, publicDemoEnabled, setPublicDemoSetting } from "./lib/publicDemo";
 
 function reasonText(reason: string) {
   const clean = reason.trim();
@@ -23,8 +24,16 @@ async function audit(ctx: MutationCtx, actor: Doc<"players">, action: string, ta
 }
 
 export const access = query({ args: { token: v.string() }, handler: async (ctx, { token }) => {
-  try { const { actor, role, session } = await requireStaff(ctx, token); return { role, email: actor.verifiedEmail!, demo: Boolean(session.demoPlayerId) }; }
+  try { const { actor, role, session } = await requireStaff(ctx, token); return { role, email: actor.verifiedEmail!, demo: Boolean(session.demoPlayerId), publicDemo: await publicDemoEnabled(ctx) }; }
   catch { return null; }
+} });
+
+export const setPublicDemo = mutation({ args: { token: v.string(), enabled: v.boolean() }, handler: async (ctx, { token, enabled }) => {
+  const { actor } = await requireStaff(ctx, token, true);
+  if (enabled) await ensurePublicDemoNpcs(ctx);
+  await setPublicDemoSetting(ctx, enabled, actor);
+  await audit(ctx, actor, enabled ? "public-demo.enabled" : "public-demo.disabled", "public-demo", enabled ? "Modo compartido con personajes ficticios" : "Solo viajes entre participantes reales", true);
+  return { enabled };
 } });
 
 export const setDemo = mutation({ args: { token: v.string(), enabled: v.boolean() }, handler: async (ctx, { token, enabled }) => {
@@ -49,7 +58,7 @@ export const overview = query({ args: { token: v.string() }, handler: async (ctx
   const demo = Boolean(session.demoPlayerId);
   const [players, notes, reports] = await Promise.all([ctx.db.query("players").take(2001), ctx.db.query("notes").order("desc").take(2001), ctx.db.query("channelReports").order("desc").take(1001)]);
   const people = players.filter(p => demo ? p.demoOwnerId === actor._id : !p.isDemo && !p.isNpc);
-  const messages = notes.filter(n => demo ? n.demoOwnerId === actor._id : !n.isDemo);
+  const messages = notes.filter(n => demo ? n.demoOwnerId === actor._id : !n.isDemo || n.isPublicDemo);
   return { people: people.length, banned: people.filter(p => p.bannedAt).length, notes: messages.length,
     pendingNotes: messages.filter(n => n.moderationStatus === "pending" || (n.hidden && !n.moderationStatus)).length,
     pendingChannels: reports.filter(r => r.synthetic === demo && r.status === "pending").length,
@@ -83,7 +92,7 @@ export const banUser = mutation({ args: { token: v.string(), playerId: v.id("pla
 export const notes = query({ args: { token: v.string(), status: v.union(v.literal("all"), v.literal("pending"), v.literal("published"), v.literal("removed")), paginationOpts: paginationOptsValidator }, handler: async (ctx, { token, status, paginationOpts }) => {
   const { actor, session } = await requireStaff(ctx, token);
   const result = await ctx.db.query("notes").filter(q => q.and(
-    session.demoPlayerId ? q.eq(q.field("demoOwnerId"), actor._id) : q.neq(q.field("isDemo"), true),
+    session.demoPlayerId ? q.eq(q.field("demoOwnerId"), actor._id) : q.or(q.neq(q.field("isDemo"), true), q.eq(q.field("isPublicDemo"), true)),
     status === "all" ? q.eq(true, true) : status === "pending" ? q.or(q.eq(q.field("moderationStatus"), "pending"), q.and(q.eq(q.field("hidden"), true), q.eq(q.field("moderationStatus"), undefined))) : status === "published" ? q.and(q.eq(q.field("hidden"), false), q.neq(q.field("moderationStatus"), "removed")) : q.eq(q.field("moderationStatus"), "removed")
   )).order("desc").paginate(paginationOpts);
   return { ...result, page: await Promise.all(result.page.map(async note => ({ ...note, author: safePlayer((await ctx.db.get(note.authorId))!), reports: (await ctx.db.query("reports").withIndex("by_note", q => q.eq("noteId", note._id)).take(100)).length }))) };

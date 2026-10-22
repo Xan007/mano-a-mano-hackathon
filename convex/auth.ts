@@ -5,6 +5,7 @@ import { getPlayer, sessionIdentity, roleFor } from "./lib/auth";
 import { randomHex } from "./lib/hash";
 import { DEFAULT_LAYOUT, DEFAULT_THEME } from "../config/progression";
 import { DEFAULT_COVER, STARTER_COVERS } from "../config/covers";
+import { publicDemoEnabled } from "./lib/publicDemo";
 
 export const signOut = mutation({
   args: { token: v.string() },
@@ -27,6 +28,7 @@ export const me = query({
     if (!player) return null;
     return {
       _id: player._id,
+      publicDemo: await publicDemoEnabled(ctx),
       staffRole: identity ? await roleFor(ctx, identity.actor) : null,
       isDemo: Boolean(player.isDemo),
       verifiedEmail: identity?.actor.verifiedEmail ?? null,
@@ -50,6 +52,11 @@ export const me = query({
       lastFreeTokenDay: player.lastFreeTokenDay ?? null,
     };
   },
+});
+
+export const publicDemoStatus = query({
+  args: {},
+  handler: async (ctx) => ({ enabled: await publicDemoEnabled(ctx) }),
 });
 
 

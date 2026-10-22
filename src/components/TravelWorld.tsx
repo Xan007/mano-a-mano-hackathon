@@ -8,6 +8,8 @@ type Traveler = {
   _id: string;
   hopCount: number;
   hopsTarget: number;
+  currentHop?: number | null;
+  currentHolderNpc?: boolean | null;
   waitingSince?: number;
   catalog: { imagePath: string; species: string } | null;
 };
@@ -113,7 +115,8 @@ export function TravelWorld({ travelers, returnedCount = 0, readyCount = 0, load
         ) : (
         <ul className="travel-manifest" aria-label="Progreso de tus peluches en viaje">
           {travelers.map(item => {
-            const progress = Math.min(Math.max(item.hopCount, 0), item.hopsTarget);
+            const stops = item.waitingSince !== undefined ? item.hopCount : item.currentHop ?? item.hopCount;
+            const progress = Math.min(Math.max(stops, 0), item.hopsTarget);
             const percent = item.hopsTarget > 0 ? progress / item.hopsTarget * 100 : 0;
             const name = item.catalog?.species ?? "Peluche";
             return <li key={item._id}>
@@ -121,7 +124,7 @@ export function TravelWorld({ travelers, returnedCount = 0, readyCount = 0, load
                 <PlushArt imagePath={item.catalog?.imagePath} alt="" size="sm" className="h-14 w-14 border-ink/10" blend={false} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2"><h3 className="truncate text-base font-bold">{name}</h3><ArrowUpRight className="h-4 w-4 shrink-0 text-ink/55" aria-hidden="true" /></div>
-                  <p className="mt-1 text-xs text-ink/65">{item.waitingSince !== undefined ? "Buscando otra persona para recibirlo…" : `${progress} de ${item.hopsTarget} paradas`}</p>
+                  <p className="mt-1 text-xs text-ink/65">{item.waitingSince !== undefined ? `Buscando parada · ${progress}/${item.hopsTarget}` : `Parada ${progress}/${item.hopsTarget} · ${item.currentHolderNpc === true ? "personaje" : item.currentHolderNpc === false ? "persona" : "en tránsito"}`}</p>
                   <div className="travel-progress" role="progressbar" aria-label={`Viaje de ${name}`} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={item.hopsTarget}>
                     <span style={{width:`${percent}%`}} />
                   </div>

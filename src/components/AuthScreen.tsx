@@ -3,7 +3,7 @@ import { useCalmMotion as useReducedMotion } from "../lib/motion";
 import { Link } from "react-router";
 import { useState } from "react";
 import { errorMessage } from "../lib/errors";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { m as motion } from "motion/react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
@@ -41,6 +41,7 @@ const heroPlush = [
 export function AuthScreen() {
   const { start } = useSession();
   const createDemo = useMutation(api.auth.createGuest);
+  const publicDemo = useQuery(api.auth.publicDemoStatus, {});
   const reduceMotion = useReducedMotion();
   const [accountOpen, setAccountOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -237,7 +238,7 @@ export function AuthScreen() {
             {busy ? "Preparando tu recorrido…" : "Empezar mi recorrido"}
           </button>
           <p className="mt-3 text-xs leading-relaxed text-ink/70">
-            Puedes empezar sin cuenta y guardarla después.
+            Puedes empezar sin cuenta y guardarla después. {publicDemo?.enabled ? "Algunos personajes de la demo son ficticios." : "Los peluches viajan entre personas."}
           </p>
           <button type="button" onClick={()=>setAccountOpen(true)} className="btn btn-ghost mt-3 w-full">Ya tengo una cuenta</button>
         </motion.section>

@@ -1,6 +1,6 @@
 # Manual de operación y moderación
 
-Versión: 21 de octubre de 2026. Aplicación: https://mano-a-mano.pages.dev.
+Versión: 22 de octubre de 2026. Aplicación: https://mano-a-mano.pages.dev.
 
 ## Acceso y permisos
 
@@ -17,6 +17,7 @@ El enlace está en Perfil → Administración y moderación. También se puede a
 | Editar y pausar contactos reales | Sí, fuera de demo | No |
 | Consultar historial de decisiones | Sí | Sí |
 | Añadir y revocar moderadores | Sí | No |
+| Activar y desactivar la demo compartida para todas las cuentas | Sí | No |
 | Activar y reiniciar la presentación privada | Sí | No |
 
 Equipo permite registrar un correo antes de que esa persona cree cuenta. El permiso solo se utiliza al entrar con ese mismo correo verificado de Google. No se envía invitación por correo. La revocación invalida las consultas y acciones del panel de inmediato; conserva la cuenta del juego. La cuenta principal está protegida contra suspensión y retiro de su propio permiso.
@@ -24,13 +25,13 @@ Equipo permite registrar un correo antes de que esa persona cree cuenta. El perm
 ## Preparar una presentación
 
 1. Entrar como administración y abrir /admin.
-2. Activar «Modo demo». Se cambia al perfil ficticio de presentación, no al de otros participantes.
-3. Si el escenario ya se utilizó, elegir «Reiniciar presentación» y confirmar en la ventana propia.
-4. «Mostrar la demo» abre Casa: tres viajes, tres libretas completas y peluches disponibles. Buzón comienza con dos visitas, cada una con cuatro mensajes decorados.
-5. Mostrar revisión de notas y reportes ficticios desde el panel. La demo usa la misma lógica de permisos y revisión de contenido.
-6. Al terminar, «Volver a producción» recupera el perfil y el progreso reales.
+2. «Demo compartida» controla a todas las cuentas. Está activa por defecto; las personas usan sus perfiles reales y pueden recibir o visitar personajes ficticios.
+3. Apagarla deja únicamente los viajes entre personas. Las visitas que aún estén con personajes se adelantan para no dejarlas atrapadas.
+4. «Demo privada del pitch» cambia solo la sesión de administración a un perfil separado. «Reiniciar presentación» repone sus libretas, viajes y buzón sintéticos sin cambiar el modo compartido.
+5. Mostrar las notas ficticias con longitud variada, fondos y efectos; los autores automáticos aparecen identificados. La demo no sustituye el juicio de moderación.
+6. «Volver a mi cuenta» recupera el perfil y el progreso reales de administración.
 
-Hay seis personajes ficticios, doce mensajes editoriales de más de 140 caracteres, fondos variados y efectos independientes. Los personajes avanzan cada 18 segundos y cada visita tiene un plazo de tres minutos. La pantalla identifica la demo; los autores automáticos se distinguen de participantes reales.
+Hay seis personajes ficticios con notas editoriales de longitud mediana y medio-larga, fondos variados y efectos independientes. En viajes que reciben los personajes, avanzan automáticamente después de 18 segundos. En la presentación privada, cada visita tiene un plazo de tres minutos. La pantalla identifica la demo; los autores automáticos se distinguen de participantes reales.
 
 Reiniciar elimina únicamente los datos del escenario personal de presentación. No elimina cuentas reales. Sus trabajos programados antiguos dejan de actuar al no existir sus registros. El historial administrativo permanece.
 
@@ -38,7 +39,7 @@ Reiniciar elimina únicamente los datos del escenario personal de presentación.
 
 ## Operación de producción
 
-El modo predeterminado no crea NPC ni mensajes de relleno. Cada persona recibe como máximo dos peluches simultáneos y tiene una hora para responder o dejar pasar el peluche sin nota. Al vencer el plazo el peluche avanza sin inventar texto. Prioriza participantes recientes con primer recorrido completo; excluye suspendidos y perfiles de presentación.
+La demo compartida está activa por defecto. Cuando hay personas activas y personajes ficticios disponibles, el selector reparte los viajes entre ambos grupos para que la actividad de cuentas conectadas no deje sin uso a los personajes; si solo hay un grupo disponible, usa ese grupo. Puede entregar a cada cuenta un peluche ficticio como máximo una vez al día y respeta el límite de dos visitas simultáneas. La cuenta principal puede apagarla desde /admin; al hacerlo no se asignan personajes ni se crean más mensajes automáticos. Una visita real dura una hora para responder o pasar el peluche sin nota. Al vencer, avanza automáticamente y conserva las notas recibidas. La selección excluye cuentas suspendidas.
 
 Si al iniciar no hay destinatario disponible, el envío espera. El sistema revisa disponibilidad con intervalos progresivos de 5 a 60 minutos hasta 48 horas y luego lo devuelve. Si ya hubo visitas y se agotaron los destinatarios disponibles, vuelve con sus notas reales aunque no alcance siete paradas.
 

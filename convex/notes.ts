@@ -6,6 +6,7 @@ import { requirePlayer, getPlayer } from "./lib/auth";
 import { likeState } from "./lib/likes";
 import { noteIsFresh } from "./lib/community";
 import { NOTE_PERMANENT_COST } from "../config/care";
+import { publicDemoEnabled } from "./lib/publicDemo";
 
 async function authorInfo(ctx: QueryCtx, authorId: Id<"players">) {
   const author = await ctx.db.get(authorId);
@@ -22,8 +23,10 @@ export const byPlush = query({
   handler: async (ctx, { token, plushId }) => {
     const me = await getPlayer(ctx, token);
     if (!me) return [];
-
-    const item = await ctx.db.get(plushId);
+    const [demoIsOpen, item] = await Promise.all([
+      publicDemoEnabled(ctx),
+      ctx.db.get(plushId),
+    ]);
     if (!item) return [];
 
     const isOwner = item.originId === me._id;
@@ -53,7 +56,9 @@ export const byPlush = query({
     for (const note of visible) {
       const author = await ctx.db.get(note.authorId);
       if (!author || note.moderationStatus === "pending" || note.moderationStatus === "removed") continue;
-      if (me.isDemo ? author.demoOwnerId !== me.demoOwnerId : note.isDemo || author.isDemo || author.isNpc) continue;
+      if (me.isDemo
+        ? author.demoOwnerId !== me.demoOwnerId
+        : author.isPublicNpc ? !(demoIsOpen && note.isPublicDemo) : note.isDemo || author.isDemo || author.isNpc) continue;
       safe.push(note);
     }
 

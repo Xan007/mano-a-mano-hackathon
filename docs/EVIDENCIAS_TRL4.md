@@ -16,7 +16,7 @@ Comando reproducible: npm test. La suite actual contiene 101 pruebas en 12 archi
 | Separación de demo | Activar, usar y desactivar presentación | Misma cuenta y progreso reales al salir |
 | Reinicio | Regenerar escenario sintético | Participantes reales conservados |
 | Plazos reales | DEMO_TIME_SCALE elevado y visita real | 1 hora; variable antigua ignorada |
-| Sin participantes disponibles | Enviar teniendo solo personajes de demo disponibles | En espera, sin tránsito a NPC |
+| Solo personas | Demo compartida desactivada y sin destinatarios activos | El envío queda en espera; no se asignan personajes |
 | Buzón real | Entrar sin envíos de otra persona | No genera mensajes sintéticos |
 | Suspensión | Suspender cuenta con sesión abierta | Bloqueo de acciones; recuperación al restablecer |
 | Moderación humana | Revisar, retirar y volver a publicar nota | Cambia visibilidad y queda historial |
@@ -42,7 +42,7 @@ Ampliación con guía rápida: **101/101 pruebas de lógica/backend y 4/4 prueba
 
 Optimización del 22 de octubre: **6/6 pruebas de navegador de la guía**. Se añadió una descarga del mapa retenida deliberadamente para comprobar la precarga antes del toque, la respuesta inmediata del botón y la posibilidad de cerrar mientras carga. Con el mapa precargado, la transición se comprueba por debajo de 750 ms en ambos tamaños de pantalla; no representa una garantía para cualquier conexión. Se mantienen las comprobaciones de navegación, teclado y persistencia. Compilación correcta y React Doctor: 73.
 
-Verificación del repositorio el 22 de octubre: **106/106 pruebas automatizadas** (`npm test`) y compilación de producción correcta (`npm run build`). La suite también valida que la rareza obtenida esté permitida por las probabilidades de cada zona; no espera una secuencia aleatoria fija.
+Verificación del repositorio el 22 de octubre: **107/107 pruebas automatizadas** (`npm test`) y compilación de producción correcta (`npm run build`). La suite cubre el control global de demo, personajes compartidos, notas sintéticas visibles solo mientras está activa, longitud variada de mensajes y que la rareza obtenida esté permitida por las probabilidades de cada zona.
 
 Migración del deployment compartido: se archivaron 10 perfiles automáticos y 563 notas sintéticas antiguas; no se eliminaron cuentas ni colecciones reales. No había visitas activas que necesitaran reprogramación en ese momento. La variable histórica DEMO_TIME_SCALE se retiró del deployment.
 

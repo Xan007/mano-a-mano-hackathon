@@ -8,11 +8,44 @@ import { useSession } from "../lib/session";
 import { errorMessage } from "../lib/errors";
 
 export function DemoBanner() {
-  const {token}=useSession();
-  const me=useQuery(api.auth.me,token ? {token} : "skip");
-  const change=useMutation(api.admin.setDemo);
-  const [busy,setBusy]=useState(false);
-  if(!me?.isDemo || !token)return null;
-  async function leave(){setBusy(true);try{await change({token:token!,enabled:false});}catch(e){toast.error(errorMessage(e,"No pudimos cambiar de entorno."));}finally{setBusy(false);}}
-  return <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-mango px-3 py-1 text-xs font-bold"><Link to="/admin" className="inline-flex min-h-8 items-center gap-1.5"><FlaskConical className="h-3.5 w-3.5"/>Demo · Datos ficticios</Link><button type="button" onClick={leave} disabled={busy} className="min-h-8 underline">{busy ? "Cambiando…" : "Volver a producción"}</button></div>;
+  const { token } = useSession();
+  const me = useQuery(api.auth.me, token ? { token } : "skip");
+  const change = useMutation(api.admin.setDemo);
+  const [busy, setBusy] = useState(false);
+
+  if (!me || !token) return null;
+
+  async function leave() {
+    setBusy(true);
+    try {
+      await change({ token: token!, enabled: false });
+    } catch (error) {
+      toast.error(errorMessage(error, "No pudimos cambiar de entorno."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (me.isDemo) {
+    return (
+      <div className="flex min-h-6 items-center justify-center gap-2 overflow-hidden bg-mango px-2 py-1 text-[11px] font-bold leading-none sm:text-xs">
+        <Link to="/admin" className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
+          <FlaskConical className="h-3 w-3" aria-hidden="true" />
+          Demo privada
+        </Link>
+        <button type="button" onClick={leave} disabled={busy} className="shrink-0 whitespace-nowrap underline">
+          {busy ? "Cambiando…" : "Volver a mi cuenta"}
+        </button>
+      </div>
+    );
+  }
+
+  if (!me.publicDemo) return null;
+
+  return (
+    <div className="flex min-h-6 items-center justify-center gap-1.5 overflow-hidden bg-mango px-2 py-1 text-[11px] font-bold leading-none sm:text-xs">
+      <FlaskConical className="h-3 w-3 shrink-0" aria-hidden="true" />
+      <span className="whitespace-nowrap">Demo compartida</span>
+    </div>
+  );
 }

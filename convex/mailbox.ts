@@ -7,8 +7,11 @@ import { likeState } from "./lib/likes";
 import { noteIsFresh } from "./lib/community";
 import { scaled } from "./lib/time";
 import { LIVE_HOLD_MS } from "../config/operations";
-import { DEMO_MESSAGES as NPC_NOTES, DEMO_MAILBOX_COOLDOWN_MS } from "../config/operations";
+import { DEMO_MESSAGES as NPC_NOTES, DEMO_MAILBOX_COOLDOWN_MS, PUBLIC_DEMO_MAILBOX_COOLDOWN_MS } from "../config/operations";
 import { PLUSH } from "../config/game";
+import { publicDemoEnabled } from "./lib/publicDemo";
+import { ensurePublicDemoNpcs } from "./lib/publicDemo";
+import { demoNote } from "./lib/demo";
 
 async function mailboxItem(
   ctx: QueryCtx,
@@ -18,7 +21,7 @@ async function mailboxItem(
   const item = await ctx.db.get(transit.plushId);
   if (!item) return null;
 
-  const [catalog, origin, notes] = await Promise.all([
+  const [catalog, origin, notes, demoIsOpen] = await Promise.all([
     ctx.db.get(item.catalogId),
     ctx.db.get(item.originId),
     ctx.db
@@ -26,21 +29,23 @@ async function mailboxItem(
       .withIndex("by_plush", (q) => q.eq("plushId", item._id))
       .filter((q) => q.eq(q.field("hidden"), false))
       .collect(),
+    publicDemoEnabled(ctx),
   ]);
-  if (!origin || (me.isDemo ? origin.demoOwnerId !== me.demoOwnerId : origin.isNpc || origin.isDemo)) return null;
-
-  const visible = notes
-    .filter(
-      (note) =>
-        note.hopIndex < transit.hopIndex && noteIsFresh(note, Date.now()) &&
-        note.moderationStatus !== "pending" && note.moderationStatus !== "removed" &&
-        (me.isDemo ? note.demoOwnerId === me.demoOwnerId : !note.isDemo),
+  if (!origin || (me.isDemo
+    ? origin.demoOwnerId !== me.demoOwnerId
+    : origin.isPublicNpc ? !demoIsOpen : origin.isNpc || origin.isDemo)) return null;
+  const visible = (await Promise.all(notes.map(async (note) => ({ note, author: await ctx.db.get(note.authorId) }))))
+    .filter(({ note, author }) =>
+      note.hopIndex < transit.hopIndex && noteIsFresh(note, Date.now()) &&
+      note.moderationStatus !== "pending" && note.moderationStatus !== "removed" &&
+      (me.isDemo
+        ? note.demoOwnerId === me.demoOwnerId
+        : author?.isPublicNpc ? demoIsOpen && note.isPublicDemo : !note.isDemo),
     )
-    .sort((a, b) => a.hopIndex - b.hopIndex || a.createdAt - b.createdAt);
+    .sort((a, b) => a.note.hopIndex - b.note.hopIndex || a.note.createdAt - b.note.createdAt);
 
   const allNotes = await Promise.all(
-    visible.map(async (note) => {
-      const author = await ctx.db.get(note.authorId);
+    visible.map(async ({ note, author }) => {
       return {
         _id: note._id,
         body: note.body,
@@ -114,13 +119,14 @@ export const arrivals = query({
     const items = await Promise.all(holding.map(async (transit) => {
       const item = await ctx.db.get(transit.plushId);
       if (!item) return null;
-      const [catalog, origin] = await Promise.all([
+      const [catalog, origin, demoIsOpen] = await Promise.all([
         ctx.db.get(item.catalogId),
         ctx.db.get(item.originId),
+        publicDemoEnabled(ctx),
       ]);
       if (!origin || (me.isDemo
         ? origin.demoOwnerId !== me.demoOwnerId
-        : origin.isNpc || origin.isDemo)) return null;
+        : origin.isPublicNpc ? !demoIsOpen : origin.isNpc || origin.isDemo)) return null;
       return {
         transitId: transit._id,
         species: catalog?.species ?? "peluche viajero",
@@ -148,7 +154,10 @@ export const ensureDaily = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const me = await requirePlayer(ctx, token);
-    if (!me.isDemo || !me.demoOwnerId) return { created: false };
+    const privateDemo = Boolean(me.isDemo && me.demoOwnerId);
+    const publicDemo = !me.isDemo && await publicDemoEnabled(ctx);
+    if (!privateDemo && !publicDemo) return { created: false };
+    if (publicDemo) await ensurePublicDemoNpcs(ctx);
     const holding = await ctx.db
       .query("transits")
       .withIndex("by_holder_state", (q) =>
@@ -158,7 +167,7 @@ export const ensureDaily = mutation({
 
     // Older synthetic visits were created at hop 2 with only the origin note.
     // Repair that exact legacy shape so current inboxes show the missing stop.
-    for (const transit of holding) {
+    for (const transit of privateDemo ? holding : []) {
       const item = await ctx.db.get(transit.plushId);
       if (
         !item ||
@@ -200,15 +209,16 @@ export const ensureDaily = mutation({
       return { created: false };
     }
 
-    const cooldownMs = DEMO_MAILBOX_COOLDOWN_MS;
+    const cooldownMs = privateDemo ? DEMO_MAILBOX_COOLDOWN_MS : PUBLIC_DEMO_MAILBOX_COOLDOWN_MS;
     const now = Date.now();
 
     if (me.lastMailboxAt && now - me.lastMailboxAt < cooldownMs) {
       return { created: false };
     }
 
-    const players = await ctx.db.query("players").collect();
-    const senders = players.filter((player) => player.isNpc && player.isDemo && player.demoOwnerId === me.demoOwnerId && !player.bannedAt);
+    const senders = privateDemo
+      ? (await ctx.db.query("players").withIndex("by_demo_owner", q => q.eq("demoOwnerId", me.demoOwnerId!)).take(100)).filter(player => player.isNpc && player.isDemo && !player.bannedAt)
+      : (await ctx.db.query("players").withIndex("by_public_npc", q => q.eq("isPublicNpc", true)).take(100)).filter(player => !player.bannedAt);
     if (senders.length === 0) return { created: false };
 
     const sender = senders[Math.floor(Math.random() * senders.length)];
@@ -231,26 +241,19 @@ export const ensureDaily = mutation({
       createdAt: now,
     });
 
-    await ctx.db.insert("notes", {
-      plushId,
-      authorId: sender._id,
-      body: firstBody,
-      hopIndex: 0,
-      hidden: false,
-      permanent: true,
-      createdAt: now,
-      isDemo: true, demoOwnerId: me.demoOwnerId, cover: sender.noteCover, effect: sender.noteEffect, moderationStatus: "published",
-    });
-    await ctx.db.insert("notes", {
-      plushId,
-      authorId: previousHolder._id,
-      body: secondBody,
-      hopIndex: 1,
-      hidden: false,
-      permanent: true,
-      createdAt: now + 1,
-      isDemo: true, demoOwnerId: me.demoOwnerId, cover: previousHolder.noteCover, effect: previousHolder.noteEffect, moderationStatus: "published",
-    });
+    if (privateDemo) {
+      await ctx.db.insert("notes", {
+        plushId, authorId: sender._id, body: firstBody, hopIndex: 0, hidden: false, permanent: true,
+        createdAt: now, isDemo: true, demoOwnerId: me.demoOwnerId, cover: sender.noteCover, effect: sender.noteEffect, moderationStatus: "published",
+      });
+      await ctx.db.insert("notes", {
+        plushId, authorId: previousHolder._id, body: secondBody, hopIndex: 1, hidden: false, permanent: true,
+        createdAt: now + 1, isDemo: true, demoOwnerId: me.demoOwnerId, cover: previousHolder.noteCover, effect: previousHolder.noteEffect, moderationStatus: "published",
+      });
+    } else {
+      await demoNote(ctx, plushId, sender, 0, Math.floor(Math.random() * 20), true);
+      await demoNote(ctx, plushId, previousHolder, 1, Math.floor(Math.random() * 20), true);
+    }
 
     const dueAt = now + scaled(LIVE_HOLD_MS, true);
     const transitId = await ctx.db.insert("transits", {

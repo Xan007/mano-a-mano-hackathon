@@ -62,7 +62,7 @@ Página 8: prototipo y evidencia TRL 4, 25 %; comprensión del problema y necesi
 | El chat perdía conversación y no mostraba espera | Conversación conservada al cerrar y puntos animados |
 | Google tardaba al abrir | Proveedor persistente y sin descargar formularios que no se usan |
 | Reportes sin gestión visible | Panel, resolución de reportes, revisión de notas y auditoría |
-| Demo mezclada con datos reales | Perfil de presentación aislado, reinicio y plazos reales por defecto |
+| Demo mezclada con datos reales | Personajes de demo identificados, interruptor público global y perfil privado independiente para el pitch |
 | Falta de moderación delegable | Permisos por correo verificado, alta y revocación de moderadores |
 
 ## Fuentes y fecha de verificación

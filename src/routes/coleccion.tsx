@@ -28,7 +28,10 @@ function DisplayPlush({ item, isNew }: { item: Plush; isNew: boolean }) {
   const returned = item.status === "returned";
   const notes = item.receivedNoteCount ?? 0;
   const rarity = item.catalog?.rarity ?? "comun";
-  const progress = item.hopsTarget > 0 ? Math.max(0, Math.min(1, item.hopCount / item.hopsTarget)) : 0;
+  const stops = item.waitingSince !== undefined
+    ? item.hopCount
+    : item.currentHop ?? item.hopCount;
+  const progress = item.hopsTarget > 0 ? Math.max(0, Math.min(1, stops / item.hopsTarget)) : 0;
   const StatusIcon = traveling ? Send : returned ? Mail : House;
   return (
     <Link to={`/peluche/${item._id}`} className="group block h-full rounded-[1.1rem] focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-lagoon" aria-label={`${item.catalog?.species ?? "Peluche"}, ${traveling ? "de viaje" : returned ? `regresó con ${notes} notas recibidas` : "en casa"}`}>
@@ -56,10 +59,10 @@ function DisplayPlush({ item, isNew }: { item: Plush; isNew: boolean }) {
           </div>
           {traveling ? (
             <div className="mt-auto space-y-1 pt-1">
-              <div role="progressbar" aria-label="Paradas completadas" aria-valuemin={0} aria-valuemax={item.hopsTarget || 1} aria-valuenow={Math.min(item.hopCount, item.hopsTarget)} className="h-2 overflow-hidden rounded-full border border-ink bg-paper">
+              <div role="progressbar" aria-label="Parada actual" aria-valuemin={0} aria-valuemax={item.hopsTarget || 1} aria-valuenow={Math.min(stops, item.hopsTarget)} className="h-2 overflow-hidden rounded-full border border-ink bg-paper">
                 <motion.div initial={false} animate={{ scaleX: progress }} transition={{ duration: reduce ? 0 : 0.5 }} className="h-full origin-left rounded-full bg-lagoon" />
               </div>
-              <p className="text-[11px] text-ink/65">{item.waitingSince ? "Buscando su próxima parada" : `${item.hopCount} de ${item.hopsTarget} paradas`}</p>
+              <p className="text-[11px] text-ink/65">{item.waitingSince !== undefined ? `Buscando parada · ${stops}/${item.hopsTarget}` : `Parada ${stops} de ${item.hopsTarget} · ${item.currentHolderNpc === true ? "con un personaje" : item.currentHolderNpc === false ? "con otra persona" : "en tránsito"}`}</p>
             </div>
           ) : returned ? <p className="mt-auto flex items-center gap-1 pt-1 text-xs font-semibold text-ink/70"><BookOpen className="h-3.5 w-3.5" aria-hidden="true" />Ver libreta</p> : null}
         </div>

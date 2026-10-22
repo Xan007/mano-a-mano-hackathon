@@ -20,7 +20,7 @@ Abrir Apoyo. Mostrar que no exige jugar ni tener cuenta. Abrir una pregunta de �
 
 Volver a Casa: mostrar los viajeros alrededor de la Tierra. Abrir una libreta completa, luego Buzón con dos visitas. Leer solo un fragmento breve y mostrar un fondo o efecto. Si cabe, escribir una nota ficticia, revisar privacidad y enviarla; tener un mensaje preparado evita gastar el pitch escribiendo.
 
-«Esto es la demo identificada: personajes y mensajes sintéticos para una evaluación controlada. En producción solo intercambian notas personas reales, con dos visitas simultáneas y una hora para dejar una nota antes del pase automático. Sin otra persona disponible no inventamos respuestas.»
+«La demo compartida está señalada: algunos personajes y mensajes son sintéticos. Las cuentas y notas de quienes participan siguen siendo reales. Si apagamos el interruptor global, solo se asignan viajes a personas; cada visita dura una hora y, si nadie está disponible, el envío espera en lugar de inventar respuestas.»
 
 ## 2:40–3:45 · Operación demostrable
 

@@ -92,6 +92,7 @@ describe("recorrido controlado de Mano a Mano", () => {
   afterEach(() => {
     vi.clearAllTimers();
     vi.useRealTimers();
+    vi.restoreAllMocks();
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
@@ -548,11 +549,13 @@ describe("recorrido controlado de Mano a Mano", () => {
         note: "Mi teléfono es 3001234567",
       }),
     ).rejects.toThrow();
+    vi.spyOn(Math, "random").mockReturnValue(0);
     await t.action(api.plush.send, {
       token,
       plushId: plush._id,
       note: "Que tu camino tenga espacio para cosas bonitas.",
     });
+    await t.run(ctx => ctx.db.patch(plush._id, { hopsTarget: 1 }));
     const transit = await t.run(async (ctx) => {
       const result = await ctx.db.query("transits").first();
       const holder = await ctx.db.get(result!.holderId);
@@ -572,6 +575,7 @@ describe("recorrido controlado de Mano a Mano", () => {
 
   it("si es la única persona, deja el peluche en espera y lo devuelve con la nota tras 48 horas", async () => {
     const { t, token } = await setup();
+    await t.run(ctx => ctx.db.insert("appSettings", { key: "public_demo", enabled: false, updatedAt: Date.now() }));
     const plush = await rescue(t, token);
 
     const result = await t.action(api.plush.send, {
@@ -688,6 +692,7 @@ describe("recorrido controlado de Mano a Mano", () => {
   });
 
   it("envía a una persona activa antes que un NPC y termina el onboarding en la misma transacción", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
     const { t, token } = await setup();
     const recipient = await t.mutation(api.auth.createDemo, {});
     await t.action(api.players.setCompanion, {
@@ -723,6 +728,44 @@ describe("recorrido controlado de Mano a Mano", () => {
     const me = await t.query(api.auth.me, { token });
     expect(me?.firstJourneyAt).toBeTypeOf("number");
     expect(me?.journeyPerspective).toBe("others");
+  });
+
+  it("mantiene los NPC disponibles aunque haya personas activas en la demo compartida", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const { t, token } = await setup();
+    const recipient = await t.mutation(api.auth.createDemo, {});
+    const receiver = await t.query(api.auth.me, { token: recipient.token });
+    await t.run((ctx) => ctx.db.patch(receiver!._id, {
+      companion: COMPANIONS[0].id,
+      firstJourneyAt: Date.now(),
+      lastSeenAt: Date.now(),
+    }));
+    const plush = await rescue(t, token);
+    await t.action(api.plush.send, {
+      token,
+      plushId: plush._id,
+      note: "Que encuentres una pausa amable en este camino.",
+      finishJourneyPerspective: "others",
+    });
+    const transit = await t.run((ctx) => ctx.db
+      .query("transits")
+      .withIndex("by_plush", (q) => q.eq("plushId", plush._id))
+      .filter((q) => q.eq(q.field("state"), "holding"))
+      .first());
+    const holder = await t.run((ctx) => transit ? ctx.db.get(transit.holderId) : null);
+    expect(holder?.isPublicNpc).toBe(true);
+    expect(transit?.dueAt).toBeGreaterThan(Date.now());
+    await t.mutation(internal.plush.npcPass, { transitId: transit!._id });
+    const npcNote = await t.run(async (ctx) => {
+      const note = await ctx.db.query("notes")
+        .withIndex("by_plush", (q) => q.eq("plushId", plush._id))
+        .filter((q) => q.gt(q.field("hopIndex"), 0))
+        .first();
+      const author = note ? await ctx.db.get(note.authorId) : null;
+      return { note, author };
+    });
+    expect(npcNote.note?.isPublicDemo).toBe(true);
+    expect(npcNote.author?.isPublicNpc).toBe(true);
   });
 
   it("recuerda la guía por cuenta sin completarla antes del primer rescate", async () => {

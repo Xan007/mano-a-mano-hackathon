@@ -23,6 +23,7 @@ import {
 } from "../config/operations";
 import { demoNote } from "./lib/demo";
 import { noteIsFresh } from "./lib/community";
+import { publicDemoEnabled } from "./lib/publicDemo";
 import {
   EVOLUTION_COSTS,
   NOTE_LIFETIME_MS,
@@ -109,6 +110,12 @@ async function advance(
     return { returned: true };
   }
 
+  const origin = await ctx.db.get(item.originId);
+  if (origin?.isPublicNpc && !(await publicDemoEnabled(ctx))) {
+    await markReturned(ctx, item._id, now);
+    return { returned: true };
+  }
+
   const nextId = await pickNextHolder(ctx, item._id, item.originId);
   if (!nextId) {
     if (completedHop > 0 || now - (item.waitingSince ?? now) >= DELIVERY_WAIT_MS) {
@@ -131,7 +138,6 @@ async function advance(
     return { returned: false };
   }
 
-  const origin = await ctx.db.get(item.originId);
   await ctx.db.patch(item._id, { waitingSince: undefined, retryScheduledAt: undefined });
   const dueAt = now + scaled(LIVE_HOLD_MS, Boolean(origin?.isDemo));
   const transitId = await ctx.db.insert("transits", {
@@ -146,10 +152,12 @@ async function advance(
   await ctx.scheduler.runAt(dueAt, internal.plush.autoPass, { transitId });
 
   const holder = await ctx.db.get(nextId);
-  if (holder?.isNpc && holder.isDemo && origin?.isDemo && holder.demoOwnerId === origin.demoOwnerId) {
+  if (holder?.isNpc && holder.isDemo && !holder.isPublicNpc && origin?.isDemo && !origin.isPublicNpc && holder.demoOwnerId && holder.demoOwnerId === origin.demoOwnerId) {
     await ctx.scheduler.runAt(now + DEMO_PASS_MS, internal.plush.npcPass, {
       transitId,
     });
+  } else if (holder?.isPublicNpc && (!origin?.isDemo || origin.isPublicNpc) && await publicDemoEnabled(ctx)) {
+    await ctx.scheduler.runAt(now + DEMO_PASS_MS, internal.plush.npcPass, { transitId });
   }
 
   return { returned: false, transitId };
@@ -262,10 +270,21 @@ export const npcPass = internalMutation({
     const item = await ctx.db.get(transit.plushId);
     if (!item) return;
 
-    const holder = await ctx.db.get(transit.holderId);
-    const origin = await ctx.db.get(item.originId);
-    if (!holder?.isNpc || !holder.isDemo || !origin?.isDemo || holder.demoOwnerId !== origin.demoOwnerId || holder.bannedAt) return;
-    await demoNote(ctx, item._id, holder, transit.hopIndex, item._id.charCodeAt(0));
+    const [holder, origin] = await Promise.all([
+      ctx.db.get(transit.holderId),
+      ctx.db.get(item.originId),
+    ]);
+    if (!holder?.isNpc || !holder.isDemo || holder.bannedAt || !origin) return;
+    const publicTransit = Boolean(holder.isPublicNpc && (!origin.isDemo || origin.isPublicNpc));
+    if (publicTransit && !(await publicDemoEnabled(ctx))) {
+      await ctx.db.patch(transitId, { state: "passed" });
+      await advance(ctx, item, transit.hopIndex);
+      return;
+    }
+    const privateDemo = Boolean(origin.isDemo && !origin.isPublicNpc && holder.demoOwnerId && holder.demoOwnerId === origin.demoOwnerId);
+    const publicDemo = Boolean(publicTransit && await publicDemoEnabled(ctx));
+    if (!privateDemo && !publicDemo) return;
+    await demoNote(ctx, item._id, holder, transit.hopIndex, item._id.charCodeAt(0), publicDemo);
 
     await ctx.db.patch(transitId, { state: "passed" });
     await advance(ctx, item, transit.hopIndex);
@@ -277,6 +296,7 @@ export const getMyPlushes = query({
   handler: async (ctx, { token }) => {
     const me = await getPlayer(ctx, token);
     if (!me) return [];
+    const demoIsOpen = await publicDemoEnabled(ctx);
 
     const items = await ctx.db
       .query("plushItems")
@@ -286,6 +306,13 @@ export const getMyPlushes = query({
     const withCatalog = await Promise.all(
       items.map(async (item) => {
         const catalog = await ctx.db.get(item.catalogId);
+        const transit = item.status === "traveling"
+          ? await ctx.db.query("transits")
+            .withIndex("by_plush", (q) => q.eq("plushId", item._id))
+            .filter((q) => q.eq(q.field("state"), "holding"))
+            .first()
+          : null;
+        const currentHolder = transit ? await ctx.db.get(transit.holderId) : null;
         let receivedNoteCount = 0;
         if (item.status === "returned") {
           const notes = await ctx.db.query("notes").withIndex("by_plush", (q) => q.eq("plushId", item._id)).collect();
@@ -293,11 +320,19 @@ export const getMyPlushes = query({
             if (note.authorId === me._id || !noteIsFresh(note, Date.now()) || note.moderationStatus === "pending" || note.moderationStatus === "removed") continue;
             const author = await ctx.db.get(note.authorId);
             if (!author) continue;
-            if (me.isDemo ? author.demoOwnerId !== me.demoOwnerId : note.isDemo || author.isDemo || author.isNpc) continue;
+            if (me.isDemo
+              ? author.demoOwnerId !== me.demoOwnerId
+              : author.isPublicNpc ? !demoIsOpen : note.isDemo || author.isDemo || author.isNpc) continue;
             receivedNoteCount++;
           }
         }
-        return { ...item, catalog, receivedNoteCount };
+        return {
+          ...item,
+          catalog,
+          receivedNoteCount,
+          currentHop: transit?.hopIndex ?? null,
+          currentHolderNpc: currentHolder?.isNpc ?? null,
+        };
       }),
     );
 
@@ -342,7 +377,8 @@ export const getOne = query({
       catalog,
       holderAlias: holderPlayer?.alias ?? null,
       holderCompanion: holderPlayer?.companion ?? null,
-      holderIsNpc: holderPlayer?.isNpc ?? false,
+      holderIsNpc: holderPlayer?.isNpc ?? null,
+      currentHop: holder?.hopIndex ?? null,
     };
   },
 });

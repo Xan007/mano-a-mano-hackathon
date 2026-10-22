@@ -111,8 +111,8 @@ export default function PelucheDetail() {
                 </p>
               ) : (
                 <>
-                  <p className="text-xs font-bold">{item.hopCount} de {item.hopsTarget} paradas</p>
-                  <HopTrack hops={item.hopCount} total={item.hopsTarget} />
+                  <p className="text-xs font-bold">Parada {item.currentHop ?? item.hopCount} de {item.hopsTarget} · {item.holderIsNpc === true ? "con un personaje" : item.holderIsNpc === false ? "con otra persona" : "en tránsito"}</p>
+                  <HopTrack hops={item.currentHop ?? item.hopCount} total={item.hopsTarget} />
                 </>
               )}
             </div>

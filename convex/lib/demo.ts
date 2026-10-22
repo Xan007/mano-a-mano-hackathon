@@ -5,12 +5,12 @@ import { DEMO_MESSAGES, DEMO_PEOPLE, DEMO_HOLD_MS } from "../../config/operation
 import { PLUSH_CATALOG } from "../../config/catalog";
 import { RESCUE_STAGES } from "../../config/rescueStages";
 
-export async function demoNote(ctx: MutationCtx, plushId: Id<"plushItems">, author: Doc<"players">, hopIndex: number, variation = 0) {
+export async function demoNote(ctx: MutationCtx, plushId: Id<"plushItems">, author: Doc<"players">, hopIndex: number, variation = 0, publicRoster = false) {
   const style = DEMO_PEOPLE[(hopIndex + variation) % DEMO_PEOPLE.length];
   return await ctx.db.insert("notes", {
     plushId, authorId: author._id, body: DEMO_MESSAGES[(hopIndex + variation) % DEMO_MESSAGES.length], hopIndex,
     hidden: false, permanent: true, createdAt: Date.now() - (7 - hopIndex) * 60_000,
-    theme: "papel", cover: style.cover, effect: style.effect, isDemo: true, demoOwnerId: author.demoOwnerId,
+    theme: "papel", cover: style.cover, effect: style.effect, isDemo: true, isPublicDemo: publicRoster || undefined, demoOwnerId: author.demoOwnerId,
     moderationStatus: "published",
   });
 }

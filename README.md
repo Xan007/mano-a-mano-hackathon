@@ -18,14 +18,16 @@ Cada fragmento de historia espera tres segundos desde que aparece y permanece ha
 
 ## Producción y presentación
 
-**Producción es el comportamiento predeterminado para todos los participantes.** No crea NPC, buzones ficticios ni mensajes automáticos. Hay hasta dos visitas simultáneas por persona y cada persona tiene una hora para escribir una nota y pasar el peluche. Al vencer, avanza automáticamente y conserva las notas recibidas. Si no hay nadie disponible para iniciar el viaje, reintenta con espera progresiva hasta 48 horas; después el peluche regresa. Si el recorrido ya tuvo visitas y no quedan destinatarios disponibles, regresa con las notas reales que recibió.
+**La demo compartida está activada por defecto.** Las cuentas y las notas que escriben las personas siguen siendo reales. Si hay personas activas y personajes ficticios disponibles, los viajes se reparten entre ambos grupos para que ninguno bloquee al otro. También pueden recibir un peluche sintético de vez en cuando; está marcado como demo y el buzón permite hasta dos visitas simultáneas. La cuenta principal puede apagar la demo compartida desde /admin para dejar solo viajes entre personas. Al apagarla, las visitas en manos de personajes ficticios se adelantan y los viajes continúan entre personas reales.
+
+Una visita de una persona dura una hora para escribir o pasar el peluche. Las respuestas de personajes ficticios avanzan automáticamente a los 18 segundos. Si no hay nadie disponible, un envío real reintenta con espera progresiva hasta 48 horas; después regresa. Al apagarse la demo, no se crean mensajes ni participantes ficticios.
 
 El coste está acotado por viaje: hasta 7 paradas y un pase automático programado por parada, equivalente a unas 7 ejecuciones programadas si nadie responde a tiempo. La búsqueda de destinatarios inspecciona una muestra máxima de 256 perfiles activos recientes; cada buzón candidato consulta como máximo las 2 visitas permitidas. Esto mantiene cada transacción muy por debajo de los límites de 32.000 documentos leídos, 4.096 rangos de índice y 16.000 documentos escritos de Convex. Cuando falta destinatario, los reintentos empiezan cada 5 minutos y crecen hasta una vez por hora: menos de 60 ejecuciones durante la ventana máxima de 48 horas, en vez de 2.880 reintentos cada minuto.
 
 
-La **demo privada** se activa desde /admin únicamente por la cuenta principal verificada de Google. Usa otro perfil y datos separados, conservando el token de acceso y el progreso real. Incluye seis personajes ficticios con nuevos apodos, doce mensajes editoriales largos, fondos y efectos, tres libretas completas, tres viajes, tres peluches disponibles y dos visitas en el buzón. Los personajes avanzan cada 18 segundos y cada visita permite tres minutos.
+La **demo privada de presentación** también se activa desde /admin únicamente por la cuenta principal verificada de Google. Usa otro perfil y datos separados, conservando el token de acceso y el progreso real. Incluye seis personajes ficticios, mensajes editoriales de longitud variada, fondos y efectos, libretas completas y peluches en distintos estados. Los personajes avanzan cada 18 segundos y cada visita permite tres minutos.
 
-«Reiniciar presentación» recupera ese escenario. «Volver a producción» recupera exactamente el perfil real. Otros participantes continúan en producción. DEMO_TIME_SCALE dejó de controlar tiempos del sistema.
+«Reiniciar presentación» recupera ese escenario privado. «Volver a mi cuenta» recupera exactamente el perfil real. El interruptor de demo compartida es global y separado de esta presentación privada.
 
 ## Administración y moderación
 
@@ -38,7 +40,7 @@ Entrada: Perfil → Administración y moderación, o /admin. Se exige correo ver
 - Contactos: cola de reportes con resolución; solo administración puede editar contactos o pausar sus botones.
 - Historial: registra actor, acción, fecha, destino y motivo. Las credenciales y tokens no se muestran.
 
-Los permisos del equipo son reales incluso durante una presentación. Los cambios a contactos reales están bloqueados mientras está activa la demo. Suspender una cuenta bloquea sus sesiones abiertas y evita nuevas entregas; no borra su progreso. Retirar un permiso invalida el acceso administrativo de inmediato.
+Los permisos del equipo son reales incluso durante una presentación. Solo la cuenta principal puede activar o desactivar la demo compartida para todos; también puede mantener un perfil privado para el pitch. Los cambios a contactos reales están bloqueados desde el perfil privado de demo. Suspender una cuenta bloquea sus sesiones abiertas y evita nuevas entregas; no borra su progreso. Retirar un permiso invalida el acceso administrativo de inmediato.
 
 ## Notas y privacidad
 

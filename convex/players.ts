@@ -6,6 +6,7 @@ import { internal } from "./_generated/api";
 import { reviewAlias } from "./lib/aliasReview";
 import { COMPANION_IDS } from "../config/catalog";
 import { TOKENS } from "../config/game";
+import { ensurePublicDemoNpcs, publicDemoEnabled } from "./lib/publicDemo";
 
 export const reserveGuide = internalMutation({
   args: { token: v.string() },
@@ -111,6 +112,7 @@ export const touch = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const me = await requirePlayer(ctx, token);
+    if (await publicDemoEnabled(ctx)) await ensurePublicDemoNpcs(ctx);
     const patch: { lastSeenAt: number; alias?: string } = {
       lastSeenAt: Date.now(),
     };

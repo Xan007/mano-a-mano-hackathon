@@ -15,13 +15,14 @@ async function setup() {
 }
 describe("Administración, separación de entornos y moderación",()=>{
   beforeEach(()=>vi.useFakeTimers());
-  afterEach(()=>{vi.clearAllTimers();vi.useRealTimers();vi.unstubAllEnvs();});
+  afterEach(()=>{vi.clearAllTimers();vi.useRealTimers();vi.restoreAllMocks();vi.unstubAllEnvs();});
   it("deniega todas las operaciones del equipo a invitados y a un apodo que imita el correo administrador",async()=>{
     const {t}=await setup();const guest=await t.mutation(api.auth.createDemo,{});const me=await t.query(api.auth.me,guest);
     await t.run(ctx=>ctx.db.patch(me!._id,{alias:OWNER_EMAIL,username:OWNER_EMAIL}));
     expect(await t.query(api.admin.access,guest)).toBeNull();
     await expect(t.query(api.admin.overview,guest)).rejects.toThrow(/permisos/);
     await expect(t.mutation(api.admin.setDemo,{...guest,enabled:true})).rejects.toThrow(/permisos/);
+    await expect(t.mutation(api.admin.setPublicDemo,{...guest,enabled:false})).rejects.toThrow(/permisos/);
     await expect(t.mutation(api.admin.setModerator,{...guest,email:"equipo@example.com",active:true})).rejects.toThrow(/permisos/);
   });
   it("concede y revoca moderación inmediatamente en una sesión existente, sin permitir que el moderador delegue ni active demo",async()=>{
@@ -43,21 +44,57 @@ describe("Administración, separación de entornos y moderación",()=>{
     const inbox=await t.query(api.mailbox.list,owner);expect(inbox).toHaveLength(2);expect(inbox.every(x=>x.allNotes.length===4)).toBe(true);
     const collection=await t.query(api.plush.getMyPlushes,owner);expect(collection.filter(p=>p.status==="returned")).toHaveLength(3);expect(collection.filter(p=>p.status==="traveling")).toHaveLength(3);
     const book=await t.query(api.notes.byPlush,{...owner,plushId:collection.find(p=>p.status==="returned")!._id});
-    expect(book.length).toBeGreaterThanOrEqual(7);expect(book.every(n=>n.body.length>140&&n.body.length<=NOTE_MAX_CHARS&&n.cover&&n.effect)).toBe(true);
+    expect(book.length).toBeGreaterThanOrEqual(7);expect(book.every(n=>n.body.length>=60&&n.body.length<=NOTE_MAX_CHARS&&n.cover&&n.effect)).toBe(true);
     await t.mutation(api.admin.setDemo,{...owner,enabled:false});
     expect((await t.query(api.auth.me,owner))?._id).toBe(ownerId);expect(await t.query(api.plush.getMyPlushes,owner)).toHaveLength(0);
     await t.mutation(api.admin.setDemo,{...owner,enabled:true});expect((await t.query(api.auth.me,owner))?._id).toBe(demo?._id);
-    expect(DEMO_MESSAGES.every(m=>m.length>140&&m.length<=NOTE_MAX_CHARS)).toBe(true);
+    expect(DEMO_MESSAGES.every(m=>m.length>=60&&m.length<=NOTE_MAX_CHARS)).toBe(true);
+    expect(DEMO_MESSAGES.some(m=>m.length<=140)).toBe(true);expect(DEMO_MESSAGES.some(m=>m.length>140)).toBe(true);
   });
-  it("no crea NPC ni buzones ficticios en producción, aunque exista DEMO_TIME_SCALE",async()=>{
+  it("habilita personajes compartidos por defecto y permite apagar la demo para todas las cuentas",async()=>{
     vi.stubEnv("DEMO_TIME_SCALE","999999");
     const {t,owner}=await setup();expect(scaled(LIVE_HOLD_MS)).toBe(LIVE_HOLD_MS);
+    expect((await t.query(api.auth.me,owner))?.publicDemo).toBe(true);
+    await t.mutation(api.players.touch,owner);
+    expect(await t.run(ctx=>ctx.db.query("players").withIndex("by_public_npc",q=>q.eq("isPublicNpc",true)).collect())).toHaveLength(6);
+    await t.mutation(api.admin.setPublicDemo,{...owner,enabled:false});
+    expect((await t.query(api.auth.me,owner))?.publicDemo).toBe(false);
     expect(await t.mutation(api.mailbox.ensureDaily,owner)).toEqual({created:false});
     expect(await t.query(api.mailbox.list,owner)).toEqual([]);
-    expect(await t.run(ctx=>ctx.db.query("players").filter(q=>q.eq(q.field("isNpc"),true)).collect())).toHaveLength(0);
+    await t.mutation(api.players.touch,owner);
+    expect((await t.query(api.auth.me,owner))?.publicDemo).toBe(false);
+  });
+  it("entrega un peluche con notas de personajes compartidos y deja ocultarlos al apagar la demo",async()=>{
+    const {t,owner,ownerId}=await setup();
+    await t.run(ctx=>ctx.db.insert("plushCatalog",{slug:"public-inbox-test",species:"Chigüiro",outfit:"Papel",rarity:"comun",imagePath:"/plush/chiguiro.webp"}));
+    await t.mutation(api.players.touch,owner);
+    const inboxResult=await t.mutation(api.mailbox.ensureDaily,owner);
+    expect(inboxResult.created).toBe(true);
+    const inbox=await t.query(api.mailbox.list,owner);
+    expect(inbox).toHaveLength(1);
+    expect(inbox[0].allNotes).toHaveLength(2);
+    expect(inbox[0].allNotes.every(note=>note.isNpc)).toBe(true);
+    await t.mutation(api.admin.setPublicDemo,{...owner,enabled:false});
+    expect(await t.query(api.mailbox.list,owner)).toEqual([]);
+
+    await t.mutation(api.admin.setPublicDemo,{...owner,enabled:true});
+    const catalog=await t.run(ctx=>ctx.db.insert("plushCatalog",{slug:"public-demo-test",species:"Chigüiro",outfit:"Papel",rarity:"comun",imagePath:"/plush/chiguiro.webp"}));
+    const plushId=await t.run(ctx=>ctx.db.insert("plushItems",{originId:ownerId,catalogId:catalog,status:"collection",hopCount:0,hopsTarget:2,createdAt:Date.now()}));
+    await t.mutation(internal.plush.commitSend,{...owner,plushId,note:"Qué bonito compartir este viaje."});
+    const transit=await t.run(ctx=>ctx.db.query("transits").withIndex("by_plush",q=>q.eq("plushId",plushId)).filter(q=>q.eq(q.field("state"),"holding")).first());
+    const holder=await t.run(ctx=>ctx.db.get(transit!.holderId));
+    expect(holder?.isPublicNpc).toBe(true);
+    expect((await t.query(api.plush.getMyPlushes,owner)).find(item=>item._id===plushId)?.currentHop).toBe(transit!.hopIndex);
+    await t.mutation(internal.plush.npcPass,{transitId:transit!._id});
+    const next=await t.run(ctx=>ctx.db.query("transits").withIndex("by_plush",q=>q.eq("plushId",plushId)).filter(q=>q.eq(q.field("state"),"holding")).first());
+    expect(next).not.toBeNull();
+    expect((await t.query(api.plush.getMyPlushes,owner)).find(item=>item._id===plushId)?.currentHop).toBe(next!.hopIndex);
+    await t.mutation(internal.plush.npcPass,{transitId:next!._id});
+    const notes=await t.query(api.notes.byPlush,{...owner,plushId});
+    expect(notes.filter(note=>note.isPublicDemo)).toHaveLength(2);
   });
   it("pone el envío en espera sin destinatario real y nunca lo entrega a los personajes de la demo",async()=>{
-    const {t,owner}=await setup();await t.mutation(api.admin.setDemo,{...owner,enabled:true});await t.mutation(api.admin.setDemo,{...owner,enabled:false});
+    const {t,owner}=await setup();await t.mutation(api.admin.setPublicDemo,{...owner,enabled:false});await t.mutation(api.admin.setDemo,{...owner,enabled:true});await t.mutation(api.admin.setDemo,{...owner,enabled:false});
     const me=await t.query(api.auth.me,owner);
     const item=await t.run(async ctx=>{const catalog=await ctx.db.query("plushCatalog").first();return await ctx.db.insert("plushItems",{originId:me!._id,catalogId:catalog!._id,status:"collection",hopCount:0,hopsTarget:7,createdAt:Date.now()});});
     await t.mutation(internal.plush.commitSend,{...owner,plushId:item,note:"Que hoy encuentres un momento amable."});
@@ -106,7 +143,9 @@ describe("Administración, separación de entornos y moderación",()=>{
     expect(await t.run(ctx=>ctx.db.get(ownerId))).not.toBeNull();expect(await t.run(ctx=>ctx.db.get(real!._id))).not.toBeNull();
     await t.mutation(api.admin.setDemo,{...owner,enabled:false});expect((await t.query(api.auth.me,owner))?._id).toBe(ownerId);
   });
-  it("usa 48 horas reales para visitas y no entrega a personas suspendidas",async()=>{
+  it("usa una hora por visita y excluye a personas suspendidas",async()=>{
+    vi.spyOn(Math,"random").mockReturnValue(0);
+    // A single active human keeps the default shared demo enabled for this route.
     const {t,owner,ownerId}=await setup();await t.mutation(api.admin.setDemo,{...owner,enabled:true});await t.mutation(api.admin.setDemo,{...owner,enabled:false});
     const recipient=await t.mutation(api.auth.createDemo,{});const me=await t.query(api.auth.me,recipient);
     await t.run(ctx=>ctx.db.patch(me!._id,{companion:"garza",firstJourneyAt:Date.now(),lastSeenAt:Date.now()}));
@@ -118,6 +157,7 @@ describe("Administración, separación de entornos y moderación",()=>{
     expect(await t.query(api.mailbox.list,recipient)).toEqual([]);
   });
   it("las tareas antiguas no adelantan una visita cuyo plazo todavía no venció",async()=>{
+    vi.spyOn(Math,"random").mockReturnValue(0);
     const {t,owner,ownerId}=await setup();await t.mutation(api.admin.setDemo,{...owner,enabled:true});await t.mutation(api.admin.setDemo,{...owner,enabled:false});
     const recipient=await t.mutation(api.auth.createDemo,{});const me=await t.query(api.auth.me,recipient);
     await t.run(ctx=>ctx.db.patch(me!._id,{companion:"garza",firstJourneyAt:Date.now(),lastSeenAt:Date.now()}));

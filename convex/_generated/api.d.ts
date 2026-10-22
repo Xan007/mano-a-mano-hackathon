@@ -25,6 +25,7 @@ import type * as lib_groq from "../lib/groq.js";
 import type * as lib_hash from "../lib/hash.js";
 import type * as lib_likes from "../lib/likes.js";
 import type * as lib_prefilter from "../lib/prefilter.js";
+import type * as lib_publicDemo from "../lib/publicDemo.js";
 import type * as lib_rarity from "../lib/rarity.js";
 import type * as lib_time from "../lib/time.js";
 import type * as lib_travel from "../lib/travel.js";
@@ -61,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   "lib/hash": typeof lib_hash;
   "lib/likes": typeof lib_likes;
   "lib/prefilter": typeof lib_prefilter;
+  "lib/publicDemo": typeof lib_publicDemo;
   "lib/rarity": typeof lib_rarity;
   "lib/time": typeof lib_time;
   "lib/travel": typeof lib_travel;
