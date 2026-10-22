@@ -43,14 +43,18 @@ export default function Mapa() {
 
   if (!data) return null;
 
+  const isColored = (place: (typeof data.places)[number]) =>
+    place.rescued && (place.nextRescueAt === null || place.nextRescueAt > now);
   const selected = data.places.find((place) => place.id === selectedId) ?? null;
   const nextPlace =
-    data.places.find((place) => !place.rescued) ?? data.places[0];
+    data.places.find((place) => !isColored(place)) ?? data.places[0];
   const route = data.route;
   const last = cityTerritory(route[route.length - 1]?.id ?? "");
   const companion = companionById(me?.companion);
-  const rescuedIds = data.places.filter(place => place.rescued).map(place => place.id);
-  const visibleRescues = selectedId ? rescueSnapshot : rescuedIds;
+  const rescuedIds = data.places.filter(isColored).map(place => place.id);
+  const visibleRescues = selectedId
+    ? rescueSnapshot.filter((id) => rescuedIds.includes(id))
+    : rescuedIds;
   function openNextPlace() {
     setRescueSnapshot(rescuedIds);
     setSelectedId(nextPlace.id);
@@ -67,7 +71,7 @@ export default function Mapa() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="chip bg-mist" title="Paradas completadas">
-            {data.rescuedCount} de {data.totalPlaces} paradas
+          {rescuedIds.length} de {data.totalPlaces} paradas
           </span>
         </div>
       </header>
@@ -76,7 +80,7 @@ export default function Mapa() {
         <PlushArt imagePath={companion?.imagePath} alt="" size="sm" />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold text-ink/65">
-            {data.rescuedCount < data.totalPlaces
+            {rescuedIds.length < data.totalPlaces
               ? "Tu próxima parada"
               : "Puedes volver cuando quieras"}
           </p>
@@ -84,12 +88,12 @@ export default function Mapa() {
         </div>
         <button
           data-tour="rescue"
-          data-all-rescued={data.rescuedCount >= data.totalPlaces}
+          data-all-rescued={rescuedIds.length >= data.totalPlaces}
           type="button"
           onClick={openNextPlace}
           className="btn btn-ink w-full sm:w-auto"
         >
-          {data.rescuedCount < data.totalPlaces
+          {rescuedIds.length < data.totalPlaces
             ? "Rescatar un peluche"
             : "Volver a explorar"}
         </button>
@@ -106,7 +110,7 @@ export default function Mapa() {
       <section className="mx-auto w-full max-w-5xl">
         <div ref={mapViewport} data-testid="city-map" role="region" aria-label="Mapa ilustrado del recorrido" tabIndex={0} className="relative w-full overflow-x-auto overscroll-x-contain rounded-2xl bg-mist">
           <div data-testid="city-map-canvas" className="relative isolate aspect-[2/1] w-full min-w-[800px]">
-          <CityMapScene rescued={visibleRescues} nextId={nextPlace.rescued ? undefined : nextPlace.id} />
+          <CityMapScene rescued={visibleRescues} nextId={!isColored(nextPlace) ? nextPlace.id : undefined} />
 
           {last && (
             <div
@@ -123,19 +127,20 @@ export default function Mapa() {
           )}
 
           {data.places.map((place) => {
-            const next = place.id === nextPlace.id && !place.rescued;
+            const colored = isColored(place);
+            const next = place.id === nextPlace.id && !colored;
             const position = cityTerritory(place.id);
             return (
               <div
                 key={place.id}
                 data-next-place={next ? "true" : undefined}
-                data-place-status={next ? "next" : place.rescued ? "visited" : place.unlocked ? "available" : "locked"}
-                aria-label={`${place.name}: ${next ? "siguiente lugar" : place.rescued ? "visitado" : place.unlocked ? "disponible" : "bloqueado"}`}
+                data-place-status={next ? "next" : colored ? "visited" : place.unlocked ? "available" : "locked"}
+                aria-label={`${place.name}: ${next ? "siguiente lugar" : colored ? "visitado" : place.unlocked ? "disponible" : "bloqueado"}`}
                 className={cn(
                   "city-map-label absolute z-20 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap border px-2 py-1 text-[10px] font-bold leading-none tracking-[0.025em] shadow-[0_1px_4px_#17233b25] backdrop-blur-sm sm:px-2.5 sm:py-1.5 sm:text-xs",
                   next && "border-ink bg-mango text-ink shadow-[0_2px_0_var(--color-ink)]",
-                  place.rescued && "border-white/95 bg-[#fffaf0]/90 text-ink",
-                  !next && !place.rescued && place.unlocked && "border-white/90 bg-[#fffaf0]/82 text-ink",
+                  colored && "border-white/95 bg-[#fffaf0]/90 text-ink",
+                  !next && !colored && place.unlocked && "border-white/90 bg-[#fffaf0]/82 text-ink",
                   !place.unlocked && "border-white/65 bg-[#fffaf0]/60 text-ink/70",
                 )}
                 style={{
@@ -143,7 +148,7 @@ export default function Mapa() {
                   top: `clamp(2.1rem, ${(position?.ay ?? place.anchorY) * 100}%, calc(100% - 2.1rem))`,
                 }}
               >
-                <span className="inline-flex items-center gap-2"><span>{place.name}</span>{place.rescued && place.nextRescueAt !== null && <span className="rounded-full bg-ink/10 px-1.5 py-0.5 font-mono text-[9px] tabular-nums" aria-label="Tiempo para volver a rescatar">{countdown(place.nextRescueAt - now)}</span>}</span>
+                <span className="inline-flex items-center gap-2"><span>{place.name}</span>{colored && place.nextRescueAt !== null && <span className="rounded-full bg-ink/10 px-1.5 py-0.5 font-mono text-[9px] tabular-nums" aria-label="Tiempo para volver a rescatar">{countdown(place.nextRescueAt - now)}</span>}</span>
               </div>
             );
           })}
@@ -163,6 +168,7 @@ export default function Mapa() {
           place={
             {
               ...selected,
+              rescued: isColored(selected),
               story: journeyScene(selected.id, perspective)!.story,
             } as Place
           }
