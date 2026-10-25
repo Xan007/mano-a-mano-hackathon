@@ -5,7 +5,7 @@ import { useState } from "react";
 import { errorMessage } from "../lib/errors";
 import { useMutation, useQuery } from "convex/react";
 import { m as motion } from "motion/react";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, HeartHandshake, Loader2 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import { useSession } from "../lib/session";
 import { play } from "../lib/audio";
@@ -78,20 +78,6 @@ export function AuthScreen() {
           </motion.div>
 
           <div className="mt-4 space-y-3 lg:mt-4">
-            <motion.span
-              initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{
-                delay: 0.05,
-                type: "spring",
-                stiffness: 260,
-                damping: 20,
-              }}
-              className="chip bg-mango"
-            >
-              Hackathon Villavicencio 2026
-            </motion.span>
-
             <motion.h1
               initial={reduceMotion ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
@@ -119,9 +105,9 @@ export function AuthScreen() {
             </motion.p>
           </div>
 
-          <Link to="/apoyo" className="btn btn-ink relative z-10 mt-5 lg:mt-4">
-            Ver opciones de apoyo sin cuenta
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          <Link to="/apoyo" className="btn btn-guava relative z-10 mt-5 min-h-14 w-full text-base shadow-[4px_4px_0_var(--color-ink)] lg:mt-4">
+            <HeartHandshake className="h-5 w-5" aria-hidden="true" />
+            Necesito ayuda
           </Link>
 
           <div className="relative mt-1 h-40 sm:h-48 lg:h-44">
@@ -211,7 +197,6 @@ export function AuthScreen() {
           transition={{ delay: 0.1, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="card relative p-4 sm:p-6"
         >
-          <p className="chip bg-mist">Hecho en Villavicencio</p>
           <h2 className="mt-4 text-3xl">Tu primer viaje empieza aquí.</h2>
           <p className="my-4 text-sm leading-relaxed text-ink/80">
             Elige tu mascota, rescata peluches y envía notas amables.
