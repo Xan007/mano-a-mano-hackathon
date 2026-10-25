@@ -1,71 +1,65 @@
 # Mano a Mano
 
-Juego educativo de historias urbanas y peluches viajeros. Ayuda a conocer opciones de apoyo para uno mismo y a acompañar a otras personas. No diagnostica, prescribe ni ofrece terapia.
+Mano a Mano es una experiencia web interactiva que usa historias urbanas, peluches viajeros y mensajes positivos para acercar a los jóvenes a la conversación sobre salud mental y a los canales de apoyo disponibles.
 
-Aplicación: https://mano-a-mano.pages.dev
+La aplicación no diagnostica, prescribe ni reemplaza la atención profesional. Su propósito es educativo: facilitar una primera exploración, promover la empatía y mostrar dónde pedir ayuda.
 
-## Recorrido
+**Aplicación:** [mano-a-mano.pages.dev](https://mano-a-mano.pages.dev)
 
-Elegir mascota y apodo propio → rescatar peluches en historias ficticias → escribir una nota positiva → revisar privacidad y confirmar → viajar entre participantes → conservar su libreta. Apoyo se consulta sin jugar ni crear una cuenta.
+## La experiencia
 
-La cuenta puede guardarse con Google o apodo y contraseña al terminar el primer recorrido. El asistente explica la app, conversa sobre asuntos generales y muestra canales editoriales ante solicitudes clínicas; no toma acciones ni guarda el chat en el servidor.
+El recorrido está diseñado para entenderse rápido y sentirse cercano:
 
-Al entrar a Casa por primera vez, una guía de tres pasos resalta el acceso al mapa, el botón de rescate y el acceso para enviar peluches. Se puede saltar, retroceder o seguir los botones reales. Completarla o saltarla se recuerda en la cuenta; Perfil → Repetir guía rápida permite verla de nuevo. No interrumpe entradas directas a Apoyo. El último mensaje cambia si no quedan peluches listos para enviar.
+1. La persona elige una mascota y crea su apodo.
+2. Explora un mapa ilustrado de Villavicencio y rescata peluches.
+3. Conoce historias ficticias ambientadas en lugares urbanos de la ciudad.
+4. Escribe mensajes positivos y los envía de viaje a otra persona.
+5. Guarda las notas recibidas en la libreta de cada peluche.
+6. Consulta los canales de apoyo desde la aplicación o con el asistente.
 
-Durante el primer paso se precargan las páginas y se mantiene la consulta del mapa para reutilizar sus datos al avanzar. La guía reacciona a la aparición del botón en la nueva pantalla, sin esperas de sondeo. En una descarga lenta muestra «Abriendo mapa…» inmediatamente y permite cerrarla.
+Las historias muestran situaciones cotidianas y cómo se siente cada personaje. Las notas pasan por una revisión automática, incluyen una confirmación de privacidad y pueden ser reportadas para revisión humana.
 
-Cada fragmento de historia espera tres segundos desde que aparece y permanece hasta avanzar. El control de sonido está en la barra superior y en el onboarding; empieza apagado. La app incluye doce efectos CC0 de Kenney y jsbarrett para búsqueda, aparición por rareza, pasar página, resultado, despegue y respuesta del asistente. Los archivos suman unos 80 KB y se precargan al activar el sonido. Fuentes, licencias y preparación: [docs/SONIDOS.md](docs/SONIDOS.md).
+## Decisiones de UX/UI
 
-## Producción y presentación
+- Onboarding breve, progresivo y con una guía visual sobre el mapa y los controles principales.
+- Jerarquía clara: una acción principal por pantalla y textos cortos antes de revelar información detallada.
+- Mapa con territorios que recuperan el color al desbloquearse y un contador para volver a explorar una zona.
+- Animaciones suaves, sonido opcional y soporte para movimiento reducido.
+- Diseño responsive para móvil y escritorio, con navegación persistente y controles accesibles.
+- Notas personalizables con fondos, decoraciones y efectos, manteniendo la lectura como prioridad.
+- Estados visibles para viajes, buzón, colección, moderación y disponibilidad de apoyo.
 
-**La demo compartida está activada por defecto.** Las cuentas y las notas que escriben las personas siguen siendo reales. Si hay personas activas y personajes ficticios disponibles, los viajes se reparten entre ambos grupos para que ninguno bloquee al otro. También pueden recibir un peluche sintético de vez en cuando; está marcado como demo y el buzón permite hasta dos visitas simultáneas. La cuenta principal puede apagar la demo compartida desde /admin para dejar solo viajes entre personas. Al apagarla, las visitas en manos de personajes ficticios se adelantan y los viajes continúan entre personas reales.
+## Funcionalidades principales
 
-Una visita de una persona dura una hora para escribir o pasar el peluche. Las respuestas de personajes ficticios avanzan automáticamente a los 18 segundos. Si no hay nadie disponible, un envío real reintenta con espera progresiva hasta 48 horas; después regresa. Al apagarse la demo, no se crean mensajes ni participantes ficticios.
+- Viajes de peluches entre participantes, con reintentos cuando no hay destinatarios disponibles.
+- Demo compartida con personajes ficticios identificados y una demo privada para presentación.
+- Chatbot que explica cómo usar la app y muestra información de apoyo cuando se solicita; no ofrece consejos clínicos.
+- Reputación de notas, reportes y panel de moderación con revisión, retiro, suspensión y auditoría.
+- Acceso con Google o cuenta local, con permisos administrativos validados en el servidor.
+- Evolución de peluches repetidos mediante copias de la misma especie, sin fichas ni monedas.
 
-El coste está acotado por viaje: hasta 7 paradas y un pase automático programado por parada, equivalente a unas 7 ejecuciones programadas si nadie responde a tiempo. La búsqueda de destinatarios inspecciona una muestra máxima de 256 perfiles activos recientes; cada buzón candidato consulta como máximo las 2 visitas permitidas. Esto mantiene cada transacción muy por debajo de los límites de 32.000 documentos leídos, 4.096 rangos de índice y 16.000 documentos escritos de Convex. Cuando falta destinatario, los reintentos empiezan cada 5 minutos y crecen hasta una vez por hora: menos de 60 ejecuciones durante la ventana máxima de 48 horas, en vez de 2.880 reintentos cada minuto.
+## Tecnología
 
+React 19 · TypeScript · Vite · Tailwind CSS · Motion · React Router · Convex · Clerk · Groq · Vitest · Playwright
 
-La **demo privada de presentación** también se activa desde /admin únicamente por la cuenta principal verificada de Google. Usa otro perfil y datos separados, conservando el token de acceso y el progreso real. Incluye seis personajes ficticios, mensajes editoriales de longitud variada, fondos y efectos, libretas completas y peluches en distintos estados. Los personajes avanzan cada 18 segundos y cada visita permite tres minutos.
+Convex gestiona la persistencia, los viajes, las notas, la moderación y las tareas programadas. Clerk gestiona la autenticación. Groq se utiliza para la clasificación y el asistente bajo reglas editoriales del producto.
 
-«Reiniciar presentación» recupera ese escenario privado. «Volver a mi cuenta» recupera exactamente el perfil real. El interruptor de demo compartida es global y separado de esta presentación privada.
-
-## Administración y moderación
-
-Entrada: Perfil → Administración y moderación, o /admin. Se exige correo verificado por el servidor; conocer un correo o escribirlo como apodo no concede permisos.
-
-- Administración principal: sierrasander29@gmail.com.
-- Moderadores: se añaden y revocan por correo desde Equipo. Deben entrar con el mismo correo verificado de Google.
-- Notas: publicar, poner en revisión, retirar y consultar reportes.
-- Usuarios: consultar mascota, colección, notas, actividad y acceso; suspender o restablecer cuentas.
-- Contactos: cola de reportes con resolución; solo administración puede editar contactos o pausar sus botones.
-- Historial: registra actor, acción, fecha, destino y motivo. Las credenciales y tokens no se muestran.
-
-Los permisos del equipo son reales incluso durante una presentación. Solo la cuenta principal puede activar o desactivar la demo compartida para todos; también puede mantener un perfil privado para el pitch. Los cambios a contactos reales están bloqueados desde el perfil privado de demo. Suspender una cuenta bloquea sus sesiones abiertas y evita nuevas entregas; no borra su progreso. Retirar un permiso invalida el acceso administrativo de inmediato.
-
-## Notas y privacidad
-
-Hasta 360 caracteres. El servidor valida acceso, límites y formato; aplica prefiltro y Groq openai/gpt-oss-safeguard-20b antes de publicar. Si el proveedor falla o bloquea, no se publica ni avanza el peluche. Los borradores se conservan. La moderación puede equivocarse: los reportes ocultan las notas y abren revisión humana.
-
-La app almacena apodo, mascota, progreso y mensajes. Las cuentas de Google conservan su correo verificado para identidad y permisos. Las contraseñas usan scrypt con sal; no se exponen a la interfaz. El asistente usa openai/gpt-oss-20b y envía como contexto hasta seis mensajes previos. No solicitar ni introducir datos personales o de salud en notas o conversaciones.
-
-Los fondos y efectos se guardan con cada nota. Se respeta movimiento reducido y se pausa decoración fuera de pantalla. El mapa de ciudad usa una ilustración optimizada y una capa de territorios en color o escala de grises. La app conserva además recursos SVG del mapa anterior. Las confirmaciones son ventanas propias.
-
-## Desarrollo
-
-React, Vite, TypeScript, Tailwind, Motion, Clerk y Convex.
+## Desarrollo local
 
 ```powershell
 npm install
-# Terminal 1: backend local aislado
+npm run dev
+```
+
+Para ejecutar el backend local de Convex y el frontend aislado:
+
+```powershell
 .\scripts\start-local-validation.ps1
-# Terminal 2
 $env:VITE_CONVEX_URL = 'http://127.0.0.1:3210'
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-Variables públicas del frontend: VITE_CONVEX_URL y VITE_CLERK_PUBLISHABLE_KEY. Secretos exclusivamente en Convex: GROQ_API_KEY y CLERK_SECRET_KEY. El backend local necesita su propia configuración; el script no copia secretos del entorno compartido. No publicar archivos .env.local ni usar el prefijo VITE_ para secretos.
-
-La cuenta Google se valida por firma JWT, emisor, expiración y origen. Su correo se obtiene del Backend API de Clerk y debe estar verificado. Los permisos se consultan en el servidor en cada operación.
+Las variables públicas del frontend son `VITE_CONVEX_URL` y `VITE_CLERK_PUBLISHABLE_KEY`. Los secretos (`GROQ_API_KEY` y `CLERK_SECRET_KEY`) deben permanecer únicamente en Convex.
 
 ## Verificación y despliegue
 
@@ -73,27 +67,19 @@ La cuenta Google se valida por firma JWT, emisor, expiración y origen. Su corre
 npm test
 npm run build
 npm run lint
-npx playwright test
-npx convex dev --once
-npm run build
 npx wrangler pages deploy dist --project-name mano-a-mano --branch main --commit-dirty=true
 ```
 
-Primera actualización a esta versión: ejecutar internamente admin:archiveLegacySynthetic después de desplegar el backend. Archiva la actividad antigua de NPC sin borrar participantes ni su progreso y reprograma las visitas reales con plazos completos. La función es idempotente para los datos ya archivados. seed:run actualiza el catálogo; los lugares se leen desde config/places.ts y no se duplican en la base de datos. No crea NPC.
+## Documentación
 
-El esquema conserva 17 tablas para cuentas, sesiones, peluches, viajes, notas, rescates, moderación y administración. Se retiraron las tablas y funciones antiguas de cajas, cápsulas independientes, expediciones, misiones, mazmorras, intercambios, regalos, retos y recompensas comunitarias.
-
-La web pública usa el deployment Convex existente savory-kudu-764 y una instancia de desarrollo de Clerk. **El modo funcional producción no crea infraestructura cloud separada ni cambia esas instancias a sus modalidades comerciales de producción.**
-
-## Documentación del evento y operación
-
-- [Expediente y requisitos TRL 4](docs/HACKATHON.md)
-- [Manual de operación y moderación](docs/OPERACION.md)
-- [Casos, resultados y límites](docs/EVIDENCIAS_TRL4.md)
-- [Guion de pitch de cinco minutos](docs/PITCH.md)
+- [Operación y moderación](docs/OPERACION.md)
+- [Evidencias y límites del prototipo](docs/EVIDENCIAS_TRL4.md)
+- [Guion del pitch](docs/PITCH.md)
 - [Declaración del equipo](docs/DECLARACION_EQUIPO.md)
 - [Licencias y terceros](LICENSES.md)
+- [Fuentes y preparación del audio](docs/SONIDOS.md)
 
-Las capturas de trabajo y de ensayos locales se excluyeron para mantener el repositorio ligero. Se incluyen los recursos visuales optimizados que usa la aplicación (marca, mapa, peluches, escenas y fondos); sus fuentes se documentan en LICENSES.md. Los originales de alta resolución y archivos de trabajo locales no se versionan.
+## Trabajo del equipo
 
-El evento exige validación controlada con datos sintéticos y escenarios ficticios, sin pruebas con público ni datos reales de salud mental. El despliegue permite ejecutar la evaluación con el equipo y jurados; no demuestra eficacia sanitaria, adopción institucional ni cumplimiento de TRL 4 por sí mismo.
+El producto se diseñó, implementó y validó durante los días **20, 21 y 22 de octubre de 2026**. El repositorio reúne el resultado de ese sprint: una experiencia funcional, una interfaz cuidada y las herramientas necesarias para operar y moderar el sistema.
+
