@@ -18,6 +18,9 @@ export const COMPANIONS: Companion[] = [
   { id: "araguato", name: "Araguato", imagePath: "/plush/araguato.webp", blurb: "Alegre, nunca calla" },
 ];
 
+// La elección inicial debe ser rápida; el resto de especies se descubre en el mapa.
+export const STARTER_COMPANIONS = COMPANIONS.slice(0, 3);
+
 export const COMPANION_IDS = COMPANIONS.map((companion) => companion.id);
 
 export type CatalogEntry = {

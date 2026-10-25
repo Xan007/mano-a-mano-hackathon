@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
-import { driver, type Driver, type PopoverDOM } from "driver.js";
+import { driver, type Driver, type DriveStep, type PopoverDOM } from "driver.js";
 import { api } from "../../convex/_generated/api";
 import { companionById } from "../../config/catalog";
 import { useToken } from "../lib/session";
@@ -181,7 +181,7 @@ export default function QuickTour({ playerId, completedAt, companionId }: {
           cancelMove();
           if (!disposed) { setWarming(false); save(); }
         },
-        steps: [
+        steps: ([
           {
             element: () => visibleTarget("map")!,
             popover: {
@@ -231,7 +231,7 @@ export default function QuickTour({ playerId, completedAt, companionId }: {
               align: "end",
             },
           },
-        ],
+        ] as DriveStep[]).slice(0, 3),
       });
       tour.drive();
     }

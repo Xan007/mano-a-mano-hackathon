@@ -6,7 +6,7 @@ import { useAction, useQuery } from "convex/react";
 import { m as motion } from "motion/react";
 import { ArrowRight, Check, Loader2, LogIn } from "lucide-react";
 import { api } from "../../convex/_generated/api";
-import { COMPANIONS, companionById } from "../../config/catalog";
+import { STARTER_COMPANIONS, companionById } from "../../config/catalog";
 import { useSession } from "../lib/session";
 import { play } from "../lib/audio";
 import { Brand } from "./Brand";
@@ -78,8 +78,8 @@ export function Onboarding() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {COMPANIONS.map((companion, index) => {
+        <div className="grid grid-cols-3 gap-3">
+          {STARTER_COMPANIONS.map((companion, index) => {
             const active = selected === companion.id;
             return (
               <motion.button
